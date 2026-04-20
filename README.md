@@ -44,6 +44,7 @@ SITE_URL=https://www.heyrickishere.com
 npm run dev
 npm run check
 npm run build
+npm run admin:start
 npm run deploy
 npm run new:post -- my-new-post
 npm run new:research -- weekly-update
@@ -173,10 +174,44 @@ cover: "/images/travel/example/cover.jpg"
 - `nginx` 托管静态文件
 - `certbot` 管理 HTTPS 证书
 - `ufw` + `fail2ban` 做基础安全加固
+- 独立的管理员服务处理 `/admin`
 
 示例 `nginx` 配置见：
 
 - `ops/nginx-site.conf`
+
+管理员服务 systemd 配置见：
+
+- `ops/ricky-admin.service`
+- `ops/ricky-admin.env.example`
+
+## 管理后台
+
+第一版后台使用独立服务，不影响公开网站设计。
+
+- 登录页：`/admin/login`
+- 后台入口：`/admin`
+- 支持：博客、科研进展、游记的 Markdown 编辑
+- 支持：上传图片到 `public/images/...`
+- 支持：保存内容并一键构建发布
+
+后台运行依赖这些环境变量：
+
+```bash
+ADMIN_PORT=4322
+ADMIN_RUNTIME_DIR=/var/lib/ricky-admin
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD_HASH=<bcrypt-hash>
+ADMIN_SESSION_SECRET=<long-random-secret>
+ADMIN_COOKIE_SECURE=true
+```
+
+更新管理员密码：
+
+```bash
+npm run admin:set-password -- /etc/ricky-admin.env your-new-password
+systemctl restart ricky-admin
+```
 
 ## 备注
 
