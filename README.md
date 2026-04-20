@@ -4,6 +4,7 @@
 
 - 博客文章
 - 科研进展
+- 游记
 - About 页面
 - RSS 与 sitemap
 
@@ -46,6 +47,7 @@ npm run build
 npm run deploy
 npm run new:post -- my-new-post
 npm run new:research -- weekly-update
+npm run new:travel -- my-trip
 ```
 
 ## 内容工作流
@@ -82,6 +84,22 @@ src/content/research/2026-04-20-weekly-update.md
 
 - `templates/research-update.md`
 
+### 新建游记
+
+```bash
+npm run new:travel -- my-trip
+```
+
+这会生成一个带当天日期的文件，例如：
+
+```bash
+src/content/travel/2026-04-20-my-trip.md
+```
+
+游记模板位于：
+
+- `templates/travel-post.md`
+
 ### 写完后发布
 
 ```bash
@@ -99,6 +117,7 @@ npm run deploy
 ```text
 src/content/blog/        博客文章
 src/content/research/    科研进展
+src/content/travel/      游记
 src/data/site.ts         站点基础信息
 templates/               内容模板
 scripts/                 发布与创建内容脚本
@@ -132,6 +151,18 @@ status: "进行中"
 links:
   - label: "相关链接"
     href: "https://example.com/"
+---
+```
+
+### 游记
+
+```md
+---
+title: "游记标题"
+description: "一句摘要"
+date: 2026-04-20
+draft: false
+cover: "/images/travel/example/cover.jpg"
 ---
 ```
 

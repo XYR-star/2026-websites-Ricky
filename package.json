@@ -11,7 +11,8 @@
     "check": "astro check",
     "deploy": "bash scripts/deploy.sh",
     "new:post": "bash scripts/new-post.sh",
-    "new:research": "bash scripts/new-research.sh"
+    "new:research": "bash scripts/new-research.sh",
+    "new:travel": "bash scripts/new-travel.sh"
   },
   "dependencies": {
     "@astrojs/rss": "^4.0.18",
