@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>后台管理 · Ricky</title>
+    <meta name="robots" content="noindex,nofollow" />
+    <link rel="stylesheet" href="/admin/assets/admin.css" />
+  </head>
+  <body>
+    <div class="admin-shell">
+      <header class="admin-topbar">
+        <div>
+          <div class="admin-kicker">Ricky Admin</div>
+          <h1 class="admin-title">内容后台</h1>
+          <p class="markdown-help">保持公开网站设计不变，只在这里管理内容和图片。</p>
+        </div>
+        <div class="admin-actions">
+          <a class="link-button button-secondary" href="/" target="_blank" rel="noreferrer">查看网站</a>
+          <button id="logout-button" class="link-button button-secondary" type="button">退出登录</button>
+        </div>
+      </header>
+
+      <div class="admin-layout">
+        <aside class="admin-card admin-sidebar">
+          <nav class="admin-nav">
+            <a href="/admin" data-nav="/">总览</a>
+            <a href="/admin/blog" data-nav="/blog">博客</a>
+            <a href="/admin/research" data-nav="/research">科研进展</a>
+            <a href="/admin/travel" data-nav="/travel">游记</a>
+          </nav>
+        </aside>
+
+        <main id="app" class="admin-card admin-main"></main>
+      </div>
+    </div>
+    <script type="module" src="/admin/assets/app.js"></script>
+  </body>
+</html>
