@@ -1,11 +1,27 @@
 # Ricky Personal Site
 
-一个基于 `Astro` 的中文个人内容网站，包含：
+一个基于 `Astro` 的中文个人内容网站，主要用于发布：
 
-- 博客
+- 博客文章
 - 科研进展
-- 关于我
+- About 页面
 - RSS 与 sitemap
+
+线上地址：`https://www.heyrickishere.com`
+
+## 项目特点
+
+- 内容驱动：博客和科研更新都使用 `Markdown`
+- 结构轻：没有数据库，没有后台，适合长期维护
+- 发布简单：构建静态文件后由 `nginx` 提供服务
+- 写作友好：内置模板和快捷脚本，方便快速新建内容
+
+## 技术栈
+
+- `Astro`
+- `TypeScript`
+- `Markdown`
+- `Nginx`
 
 ## 本地开发
 
@@ -15,15 +31,11 @@ cp .env.example .env
 npm run dev
 ```
 
-## 构建
+默认站点域名配置在 `.env` 中：
 
 ```bash
-npm run build
+SITE_URL=https://www.heyrickishere.com
 ```
-
-构建产物位于 `dist/`。
-正式部署前请先在 `.env` 中设置 `SITE_URL`。
-当前默认域名已设置为 `https://www.heyrickishere.com`。
 
 ## 常用命令
 
@@ -36,101 +48,41 @@ npm run new:post -- my-new-post
 npm run new:research -- weekly-update
 ```
 
-## 内容维护
+## 内容工作流
 
-仓库里已经准备了两个模板：
-
-- [templates/blog-post.md](/root/2026-websites-Ricky/templates/blog-post.md)
-- [templates/research-update.md](/root/2026-websites-Ricky/templates/research-update.md)
-
-最省事的用法是先复制模板，再改标题和正文。
-
-也可以直接用脚本按当天日期生成文件名。
-
-### 新增博客
-
-在 `src/content/blog/` 下新增 Markdown 文件，frontmatter 使用：
-
-```md
----
-title: "文章标题"
-description: "文章摘要"
-date: 2026-04-20
-tags:
-  - 标签
-draft: false
-cover: "/optional-cover.jpg"
----
-```
-
-也可以直接复制模板：
-
-```bash
-cp templates/blog-post.md src/content/blog/my-new-post.md
-```
-
-或者直接生成：
+### 新建博客
 
 ```bash
 npm run new:post -- my-new-post
 ```
 
-这会创建一个类似这样的文件：
+这会生成一个带当天日期的文件，例如：
 
 ```bash
 src/content/blog/2026-04-20-my-new-post.md
 ```
 
-### 新增科研进展
+博客模板位于：
 
-在 `src/content/research/` 下新增 Markdown 文件，frontmatter 使用：
+- `templates/blog-post.md`
 
-```md
----
-title: "进展标题"
-date: 2026-04-20
-summary: "简要说明"
-project: "项目名"
-status: "进行中"
-links:
-  - label: "相关链接"
-    href: "https://example.com/"
----
-```
-
-也可以直接复制模板：
-
-```bash
-cp templates/research-update.md src/content/research/my-update.md
-```
-
-或者直接生成：
+### 新建科研进展
 
 ```bash
 npm run new:research -- weekly-update
 ```
 
-这会创建一个类似这样的文件：
+这会生成一个带当天日期的文件，例如：
 
 ```bash
 src/content/research/2026-04-20-weekly-update.md
 ```
 
-## 部署
+科研模板位于：
 
-### Nginx
+- `templates/research-update.md`
 
-仓库内提供了示例配置：[ops/nginx-site.conf](/root/2026-websites-Ricky/ops/nginx-site.conf)。
-
-### HTTPS
-
-拿到正式域名后执行：
-
-```bash
-certbot --nginx -d heyrickishere.com -d www.heyrickishere.com
-```
-
-### 更新发布
+### 写完后发布
 
 ```bash
 npm run deploy
@@ -139,30 +91,64 @@ npm run deploy
 这个命令会自动：
 
 - 构建站点
-- 把 `dist/` 同步到 `/var/www/ricky-site`
+- 将 `dist/` 同步到 `/var/www/ricky-site`
 - 重载 `nginx`
 
-## 服务器安全基线
+## 内容目录
 
-已安装：
+```text
+src/content/blog/        博客文章
+src/content/research/    科研进展
+src/data/site.ts         站点基础信息
+templates/               内容模板
+scripts/                 发布与创建内容脚本
+ops/                     部署配置
+```
 
-- `nginx`
-- `certbot`
-- `python3-pip`
-- `ufw`
-- `fail2ban`
+## Frontmatter 约定
 
-已完成：
+### 博客
 
-- `ufw allow OpenSSH`
-- `ufw allow 'Nginx Full'`
-- 启用 `ufw`
-- 为 `fail2ban` 添加 `sshd` jail
-- 发布 `dist/` 到 `/var/www/ricky-site`
-- 让 `nginx` 提供静态站点服务
+```md
+---
+title: "文章标题"
+description: "一句摘要"
+date: 2026-04-20
+tags:
+  - 标签
+draft: false
+---
+```
 
-待你确认后再继续：
+### 科研进展
 
-- 补上邮箱、地点和外链
-- 校验 `/etc/ssh/sshd_config`，决定是否禁用密码登录与 root 远程登录
-- 等域名解析到当前服务器后执行 `certbot`
+```md
+---
+title: "进展标题"
+date: 2026-04-20
+summary: "一句概括"
+project: "项目名"
+status: "进行中"
+links:
+  - label: "相关链接"
+    href: "https://example.com/"
+---
+```
+
+## 部署说明
+
+项目当前使用：
+
+- `nginx` 托管静态文件
+- `certbot` 管理 HTTPS 证书
+- `ufw` + `fail2ban` 做基础安全加固
+
+示例 `nginx` 配置见：
+
+- `ops/nginx-site.conf`
+
+## 备注
+
+- `.env`、`.vscode`、`.codex` 等本地文件不会进入仓库
+- `dist/` 为构建产物，不提交
+- 当前仓库同时保留了一些写作素材与记录文件，供后续整理成正式文章
