@@ -1,0 +1,24 @@
+---
+import { getCollection } from "astro:content";
+import SiteLayout from "../../layouts/SiteLayout.astro";
+import TravelCard from "../../components/TravelCard.astro";
+import { getVisibleTravelPosts } from "../../lib/content";
+
+const posts = getVisibleTravelPosts(await getCollection("travel"));
+---
+
+<SiteLayout title="游记 · Ricky" description="关于旅行、行走与城市观察的记录">
+  <section class="shell page-hero">
+    <div class="eyebrow">Travel Archive</div>
+    <h1>游记</h1>
+    <p>不是景点清单，而是一路上的光线、步行、气味和那些想要记住的小片刻。</p>
+  </section>
+
+  <section class="shell section">
+    <div class="grid grid--two">
+      {posts.map((post) => (
+        <TravelCard post={post} />
+      ))}
+    </div>
+  </section>
+</SiteLayout>

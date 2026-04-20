@@ -29,7 +29,18 @@ const research = defineCollection({
   }),
 });
 
+const travel = defineCollection({
+  schema: z.object({
+    title: z.string(),
+    description: z.string(),
+    date: z.coerce.date(),
+    draft: z.boolean().default(false),
+    cover: z.string(),
+  }),
+});
+
 export const collections = {
   blog,
   research,
+  travel,
 };

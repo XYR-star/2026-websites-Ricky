@@ -1,0 +1,27 @@
+---
+import { getCollection, render } from "astro:content";
+import PostLayout from "../../layouts/PostLayout.astro";
+import { getVisibleTravelPosts } from "../../lib/content";
+
+export async function getStaticPaths() {
+  const posts = getVisibleTravelPosts(await getCollection("travel"));
+
+  return posts.map((post) => ({
+    params: { slug: post.slug },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+---
+
+<PostLayout
+  title={post.data.title}
+  description={post.data.description}
+  date={post.data.date}
+  cover={post.data.cover}
+  eyebrow="Travel"
+>
+  <Content />
+</PostLayout>
