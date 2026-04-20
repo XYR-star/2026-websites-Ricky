@@ -6,3 +6,4 @@ dist
 .env
 .codex
 .vscode
+.admin-data

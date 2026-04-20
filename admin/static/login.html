@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>管理员登录 · Ricky</title>
+    <meta name="robots" content="noindex,nofollow" />
+    <link rel="stylesheet" href="/admin/assets/admin.css" />
+  </head>
+  <body>
+    <main class="login-page">
+      <section class="admin-card login-card">
+        <div class="admin-kicker">Admin Access</div>
+        <h1>进入内容后台</h1>
+        <p class="markdown-help">
+          这里只用于管理博客、科研进展和游记内容。连续输错 5 次会触发 24 小时封禁。
+        </p>
+        <form id="login-form" class="admin-form">
+          <div class="field-group">
+            <label for="username">用户名</label>
+            <input id="username" name="username" type="text" autocomplete="username" required />
+          </div>
+          <div class="field-group">
+            <label for="password">密码</label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              required
+            />
+          </div>
+          <button class="link-button button-accent" type="submit">登录</button>
+          <div id="login-message" class="admin-message hidden"></div>
+        </form>
+      </section>
+    </main>
+    <script type="module" src="/admin/assets/login.js"></script>
+  </body>
+</html>
