@@ -10,6 +10,11 @@ const { post } = Astro.props;
 ---
 
 <article class="card fade-in">
+  {post.data.cover && (
+    <a href={`/blog/${post.slug}`} class="card__media-link" aria-hidden="true" tabindex="-1">
+      <img class="card__media" src={post.data.cover} alt={post.data.title} loading="lazy" />
+    </a>
+  )}
   <div class="meta-row">
     <span>{formatDate(post.data.date)}</span>
     {post.data.tags.slice(0, 2).map((tag) => (

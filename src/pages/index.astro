@@ -2,12 +2,14 @@
 import { getCollection } from "astro:content";
 import PostCard from "../components/PostCard.astro";
 import ResearchCard from "../components/ResearchCard.astro";
+import TravelCard from "../components/TravelCard.astro";
 import SiteLayout from "../layouts/SiteLayout.astro";
 import { siteMeta } from "../data/site";
-import { getVisiblePosts, sortByDateDesc } from "../lib/content";
+import { getVisiblePosts, getVisibleTravelPosts, sortByDateDesc } from "../lib/content";
 
 const posts = getVisiblePosts(await getCollection("blog")).slice(0, 3);
 const research = sortByDateDesc(await getCollection("research")).slice(0, 3);
+const travel = getVisibleTravelPosts(await getCollection("travel")).slice(0, 3);
 ---
 
 <SiteLayout title="Ricky · 写作与科研记录" description={siteMeta.description}>
@@ -18,7 +20,7 @@ const research = sortByDateDesc(await getCollection("research")).slice(0, 3);
       <p>{siteMeta.intro}</p>
       <div class="hero__meta">
         <span class="pill">中文内容优先</span>
-        <span class="pill">博客 / 科研进展 / 关于我</span>
+        <span class="pill">博客 / 科研进展 / 游记</span>
         <span class="pill">持续更新中</span>
       </div>
     </div>
@@ -29,6 +31,8 @@ const research = sortByDateDesc(await getCollection("research")).slice(0, 3);
         <dd>把零散观察变成可反复阅读的文章。</dd>
         <dt>研究</dt>
         <dd>记录每个阶段的推演、试验与判断。</dd>
+        <dt>游记</dt>
+        <dd>把行走中的观察、风景和片刻感受慢慢写下来。</dd>
         <dt>工作方式</dt>
         <dd>简洁发布，长期维护，避免形式先于内容。</dd>
       </dl>
@@ -62,6 +66,21 @@ const research = sortByDateDesc(await getCollection("research")).slice(0, 3);
     <div class="grid grid--three">
       {posts.map((post) => (
         <PostCard post={post} />
+      ))}
+    </div>
+  </section>
+
+  <section class="shell section">
+    <div class="section__head">
+      <div>
+        <div class="eyebrow">Travel Notes</div>
+        <h2>游记</h2>
+      </div>
+      <a class="section__link" href="/travel">查看游记</a>
+    </div>
+    <div class="grid grid--three">
+      {travel.map((post) => (
+        <TravelCard post={post} />
       ))}
     </div>
   </section>

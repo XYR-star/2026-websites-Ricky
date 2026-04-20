@@ -1,0 +1,24 @@
+---
+import type { CollectionEntry } from "astro:content";
+import { formatDate } from "../lib/content";
+
+interface Props {
+  post: CollectionEntry<"travel">;
+}
+
+const { post } = Astro.props;
+---
+
+<article class="card card--travel fade-in">
+  <a href={`/travel/${post.slug}`} class="card__media-link">
+    <img class="card__media card__media--travel" src={post.data.cover} alt={post.data.title} loading="lazy" />
+  </a>
+  <div class="meta-row">
+    <span>{formatDate(post.data.date)}</span>
+    <span class="tag">Travel</span>
+  </div>
+  <h3 class="card__title">
+    <a href={`/travel/${post.slug}`}>{post.data.title}</a>
+  </h3>
+  <p>{post.data.description}</p>
+</article>

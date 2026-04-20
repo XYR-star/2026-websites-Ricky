@@ -276,6 +276,27 @@ main {
     background 180ms ease;
 }
 
+.card--travel {
+  overflow: hidden;
+}
+
+.card__media-link {
+  display: block;
+  margin: -1.3rem -1.3rem 1rem;
+}
+
+.card__media {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  border-radius: 28px 28px 14px 14px;
+  background: var(--bg-soft);
+}
+
+.card__media--travel {
+  aspect-ratio: 4 / 5;
+}
+
 .card:hover,
 .entry:hover {
   transform: translateY(-4px);
@@ -344,6 +365,21 @@ main {
   width: min(calc(100% - 2rem), var(--content));
   margin: 0 auto;
   padding: 1rem 0 5rem;
+}
+
+.article-cover-wrap {
+  width: min(calc(100% - 2rem), 920px);
+  margin: 0 auto 1.5rem;
+}
+
+.article-cover {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 30px;
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  background: var(--bg-soft);
 }
 
 .prose h1,
@@ -492,6 +528,14 @@ main {
   .quote-block,
   .note-panel,
   .hero__panel {
+    border-radius: 22px;
+  }
+
+  .card__media {
+    border-radius: 22px 22px 12px 12px;
+  }
+
+  .article-cover {
     border-radius: 22px;
   }
 }

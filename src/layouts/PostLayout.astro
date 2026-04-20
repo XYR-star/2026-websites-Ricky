@@ -7,14 +7,23 @@ interface Props {
   description: string;
   date: Date;
   tags?: string[];
+  cover?: string;
+  eyebrow?: string;
 }
 
-const { title, description, date, tags = [] } = Astro.props;
+const {
+  title,
+  description,
+  date,
+  tags = [],
+  cover,
+  eyebrow = "Essay",
+} = Astro.props;
 ---
 
 <SiteLayout title={`${title} · Ricky`} description={description}>
   <section class="shell page-hero">
-    <div class="eyebrow">Essay</div>
+    <div class="eyebrow">{eyebrow}</div>
     <h1>{title}</h1>
     <div class="meta-row">
       <span>{formatDate(date)}</span>
@@ -24,6 +33,11 @@ const { title, description, date, tags = [] } = Astro.props;
     </div>
     <div class="divider"></div>
   </section>
+  {cover && (
+    <section class="shell article-cover-wrap">
+      <img class="article-cover" src={cover} alt={title} />
+    </section>
+  )}
   <article class="prose">
     <slot />
   </article>
