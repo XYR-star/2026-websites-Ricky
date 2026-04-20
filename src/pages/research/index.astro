@@ -1,0 +1,24 @@
+---
+import { getCollection } from "astro:content";
+import ResearchCard from "../../components/ResearchCard.astro";
+import SiteLayout from "../../layouts/SiteLayout.astro";
+import { sortByDateDesc } from "../../lib/content";
+
+const items = sortByDateDesc(await getCollection("research"));
+---
+
+<SiteLayout title="科研进展 · Ricky" description="阶段性研究更新与项目记录">
+  <section class="shell page-hero">
+    <div class="eyebrow">Research Updates</div>
+    <h1>科研进展</h1>
+    <p>按时间记录实验、阅读、系统迭代与下一步计划。</p>
+  </section>
+
+  <section class="shell section">
+    <div class="stack">
+      {items.map((item) => (
+        <ResearchCard item={item} />
+      ))}
+    </div>
+  </section>
+</SiteLayout>

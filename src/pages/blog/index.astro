@@ -1,0 +1,24 @@
+---
+import { getCollection } from "astro:content";
+import PostCard from "../../components/PostCard.astro";
+import SiteLayout from "../../layouts/SiteLayout.astro";
+import { getVisiblePosts } from "../../lib/content";
+
+const posts = getVisiblePosts(await getCollection("blog"));
+---
+
+<SiteLayout title="博客 · Ricky" description="博客文章列表">
+  <section class="shell page-hero">
+    <div class="eyebrow">Blog Archive</div>
+    <h1>博客</h1>
+    <p>记录那些值得被好好写下来的问题、过程和判断。</p>
+  </section>
+
+  <section class="shell section">
+    <div class="grid grid--two">
+      {posts.map((post) => (
+        <PostCard post={post} />
+      ))}
+    </div>
+  </section>
+</SiteLayout>

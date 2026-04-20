@@ -1,0 +1,23 @@
+---
+import type { CollectionEntry } from "astro:content";
+import { formatDate } from "../lib/content";
+
+interface Props {
+  post: CollectionEntry<"blog">;
+}
+
+const { post } = Astro.props;
+---
+
+<article class="card fade-in">
+  <div class="meta-row">
+    <span>{formatDate(post.data.date)}</span>
+    {post.data.tags.slice(0, 2).map((tag) => (
+      <span class="tag">{tag}</span>
+    ))}
+  </div>
+  <h3 class="card__title">
+    <a href={`/blog/${post.slug}`}>{post.data.title}</a>
+  </h3>
+  <p>{post.data.description}</p>
+</article>

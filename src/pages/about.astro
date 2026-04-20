@@ -1,0 +1,67 @@
+---
+import SiteLayout from "../layouts/SiteLayout.astro";
+import { siteMeta } from "../data/site";
+---
+
+<SiteLayout title="关于我 · Ricky" description="关于站点作者、研究方向与联系方式">
+  <section class="shell page-hero">
+    <div class="eyebrow">About</div>
+    <h1>关于我</h1>
+    <p>
+      我希望这个网站既能承载持续输出的文章，也能保存研究推进时最有价值的中间状态。
+    </p>
+  </section>
+
+  <section class="shell section">
+    <div class="about-grid">
+      <div class="card">
+        <div class="section-label">简介</div>
+        <h2 class="card__title">研究、写作与系统化表达</h2>
+        <p>{siteMeta.about}</p>
+        <p>
+          第一版网站会优先保持轻量和稳定，让发布流程足够顺手，再逐步扩展到项目页、双语支持或更细的归档体系。
+        </p>
+      </div>
+      <aside class="note-panel">
+        <div class="section-label">Quick Facts</div>
+        <div class="about-list">
+          {siteMeta.location && (
+            <div>
+              <strong>地点</strong>
+              <p>{siteMeta.location}</p>
+            </div>
+          )}
+          {siteMeta.email && (
+            <div>
+              <strong>联系</strong>
+              <p>{siteMeta.email}</p>
+            </div>
+          )}
+          <div>
+            <strong>关注主题</strong>
+            <p>机器学习、智能系统、创造性工具、知识表达</p>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  {siteMeta.socialLinks.length > 0 && (
+    <section class="shell section">
+      <div class="section__head">
+        <div>
+          <div class="eyebrow">Links</div>
+          <h2>外部链接</h2>
+        </div>
+      </div>
+      <div class="grid grid--three">
+        {siteMeta.socialLinks.map((link) => (
+          <a class="card" href={link.href} target="_blank" rel="noreferrer">
+            <div class="section-label">{link.label}</div>
+            <h3 class="card__title">{link.href.replace(/^mailto:/, "")}</h3>
+          </a>
+        ))}
+      </div>
+    </section>
+  )}
+</SiteLayout>

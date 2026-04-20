@@ -1,0 +1,25 @@
+{
+  "name": "2026-websites-ricky",
+  "type": "module",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check",
+    "deploy": "bash scripts/deploy.sh",
+    "new:post": "bash scripts/new-post.sh",
+    "new:research": "bash scripts/new-research.sh"
+  },
+  "dependencies": {
+    "@astrojs/rss": "^4.0.18",
+    "@astrojs/sitemap": "^3.7.2",
+    "astro": "^5.18.1",
+    "typescript": "^5.9.3"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.8"
+  }
+}

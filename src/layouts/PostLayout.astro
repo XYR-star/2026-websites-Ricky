@@ -1,0 +1,30 @@
+---
+import SiteLayout from "./SiteLayout.astro";
+import { formatDate } from "../lib/content";
+
+interface Props {
+  title: string;
+  description: string;
+  date: Date;
+  tags?: string[];
+}
+
+const { title, description, date, tags = [] } = Astro.props;
+---
+
+<SiteLayout title={`${title} · Ricky`} description={description}>
+  <section class="shell page-hero">
+    <div class="eyebrow">Essay</div>
+    <h1>{title}</h1>
+    <div class="meta-row">
+      <span>{formatDate(date)}</span>
+      {tags.map((tag) => (
+        <span class="tag">{tag}</span>
+      ))}
+    </div>
+    <div class="divider"></div>
+  </section>
+  <article class="prose">
+    <slot />
+  </article>
+</SiteLayout>

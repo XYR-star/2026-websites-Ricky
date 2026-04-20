@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Git & GitHub 服务器配置与使用指南</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #3498db;
+            --code-bg: #f4f4f4;
+            --text-color: #333;
+            --border-color: #e1e4e8;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+        }
+
+        h1, h2, h3 {
+            color: var(--primary-color);
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.3em;
+        }
+
+        h1 { text-align: center; border-bottom: none; }
+
+        blockquote {
+            border-left: 4px solid var(--accent-color);
+            padding-left: 1em;
+            color: #666;
+            background: #f9f9f9;
+            padding: 10px 15px;
+            border-radius: 4px;
+        }
+
+        code {
+            font-family: Consolas, "Liberation Mono", Menlo, Courier, monospace;
+            background-color: var(--code-bg);
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #e83e8c;
+        }
+
+        pre {
+            background-color: #282c34;
+            color: #abb2bf;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+        }
+
+        pre code {
+            background-color: transparent;
+            color: inherit;
+            padding: 0;
+        }
+
+        .step-box {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .highlight {
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🚀 Git & GitHub 服务器配置与使用指南</h1>
+    <p style="text-align: center; color: #666;">基于个人项目实战记录 | 服务器连接 GitHub 全流程</p>
+
+    <div class="step-box">
+        <h2>1. 核心概念：为什么要配置 SSH？</h2>
+        <p>服务器连接 GitHub 就像“刷卡进门”。我们需要在服务器上生成一把“钥匙”（私钥），然后把“锁”（公钥）交给 GitHub。这样服务器以后拉取或推送代码时，就不需要每次都输入密码了。</p>
+    </div>
+
+    <div class="step-box">
+        <h2>2. 配置阶段：生成钥匙并交给 GitHub</h2>
+        
+        <h3>第一步：在服务器上生成密钥</h3>
+        <p>在服务器终端执行以下命令（邮箱填自己的）：</p>
+        <pre><code>ssh-keygen -t rsa -C "你的邮箱@example.com"</code></pre>
+        <blockquote>
+            <strong>注意：</strong> 执行过程中遇到提示直接按 <strong>回车</strong> 即可（不需要设置密码短语）。
+        </blockquote>
+
+        <h3>第二步：获取公钥内容</h3>
+        <p>生成完毕后，查看公钥内容：</p>
+        <pre><code>cat ~/.ssh/id_rsa.pub</code></pre>
+        <p>复制屏幕上显示的以 <code>ssh-rsa</code> 开头的一长串字符。</p>
+
+        <h3>第三步：在 GitHub 上添加公钥</h3>
+        <ol>
+            <li>进入 GitHub <strong>Settings</strong> -> <strong>SSH and GPG keys</strong>。</li>
+            <li>点击 <strong>New SSH key</strong>。</li>
+            <li>Title 随便填（如 Server），Key 粘贴刚才复制的内容。</li>
+            <li>点击 <strong>Add SSH key</strong> 保存。</li>
+        </ol>
+
+        <h3>第四步：验证连接</h3>
+        <p>回到服务器，测试连接是否成功：</p>
+        <pre><code>ssh -T git@github.com</code></pre>
+        <p>如果看到 <code>Hi 用户名! You've successfully authenticated...</code> 说明配置成功！</p>
+    </div>
+
+    <div class="step-box">
+        <h2>3. 仓库阶段：创建与克隆</h2>
+        
+        <h3>创建仓库</h3>
+        <p>在 GitHub 网页上点击 <strong>New Repository</strong>。</p>
+        <ul>
+            <li><strong>Name:</strong> 填项目名（如 2026-websites-Ricky）。</li>
+            <li><strong>Public/Private:</strong> 按需选择。</li>
+            <li><strong>Add README:</strong> 建议勾选（这样仓库初始不为空，方便首次拉取）。</li>
+        </ul>
+
+        <h3>将仓库克隆到服务器</h3>
+        <p>仓库创建好后，复制 SSH 地址，在服务器执行：</p>
+        <pre><code>git clone git@github.com:用户名/项目名.git
+cd 项目名</code></pre>
+    </div>
+
+    <div class="step-box">
+        <h2>4. 分支管理：Main 与 Dev</h2>
+        <p>现在的 GitHub 默认主分支叫 <code>main</code>（不再是 master）。</p>
+        
+        <h3>查看当前分支</h3>
+        <pre><code>git branch</code></pre>
+        <p>带 <code>*</code> 号的就是当前所在的分支。</p>
+
+        <h3>关于 Dev 分支</h3>
+        <p>如果是个人小项目，直接在 <code>main</code> 分支开发即可。如果需要创建开发分支：</p>
+        <pre><code>git checkout -b dev
+git push -u origin dev</code></pre>
+    </div>
+
+    <div class="step-box">
+        <h2>5. 日常开发：Git 操作流</h2>
+        <p>Git 不会自动上传修改，需要你手动“打包”和“发货”。</p>
+
+        <h3>标准四步走</h3>
+        <ol>
+            <li><strong>查看状态：</strong>看看改了啥。<br>
+                <code>git status</code>
+            </li>
+            <li><strong>添加到暂存区：</strong>把修改的文件挑出来。<br>
+                <code>git add .</code> (点代表所有改动)
+            </li>
+            <li><strong>提交到本地仓库：</strong>拍照存档，写备注。<br>
+                <code>git commit -m "这里写修改说明"</code>
+            </li>
+            <li><strong>推送到 GitHub：</strong>同步到云端。<br>
+                <code>git push</code>
+            </li>
+        </ol>
+    </div>
+
+    <footer style="text-align: center; margin-top: 50px; color: #888; font-size: 0.9em;">
+        <p>Generated by AI Assistant for Ricky's Project</p>
+    </footer>
+
+</body>
+</html>
