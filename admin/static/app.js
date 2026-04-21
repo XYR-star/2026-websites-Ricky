@@ -1,6 +1,7 @@
 let csrfToken = "";
 let homepageSectionTypes = [];
 let homepageState = null;
+let aboutState = null;
 
 const appEl = document.getElementById("app");
 const logoutButton = document.getElementById("logout-button");
@@ -98,6 +99,13 @@ function defaultHomepageSection(type, order) {
   };
 }
 
+function defaultAboutLink() {
+  return {
+    label: "新链接",
+    href: "https://example.com/",
+  };
+}
+
 async function apiFetch(url, options = {}) {
   const response = await fetch(url, {
     credentials: "same-origin",
@@ -134,40 +142,6 @@ function renderMessage(text = "", type = "success") {
   return `<div class="admin-message ${type}">${escapeHtml(text)}</div>`;
 }
 
-function dashboardView() {
-  appEl.innerHTML = `
-    <div class="admin-grid">
-      <section>
-        <div class="admin-kicker">Overview</div>
-        <h2 class="admin-title" style="font-size:2.1rem">从这里管理首页、内容和图片</h2>
-        <p class="markdown-help">现在支持首页配置、博客、科研进展、游记的 Markdown 编辑，以及内容移入回收区删除与一键发布。</p>
-      </section>
-      <div class="admin-grid two">
-        <a class="admin-card upload-card" href="/admin/homepage">
-          <div class="admin-kicker">Homepage</div>
-          <h3>管理首页</h3>
-          <p class="markdown-help">修改首屏文字，增删预设首页板块，并调整显示顺序。</p>
-        </a>
-        <a class="admin-card upload-card" href="/admin/blog">
-          <div class="admin-kicker">Blog</div>
-          <h3>管理博客</h3>
-          <p class="markdown-help">新增、修改或移入回收区，支持封面图和 Markdown 正文。</p>
-        </a>
-        <a class="admin-card upload-card" href="/admin/research">
-          <div class="admin-kicker">Research</div>
-          <h3>管理科研进展</h3>
-          <p class="markdown-help">维护研究更新、项目状态和相关链接。</p>
-        </a>
-        <a class="admin-card upload-card" href="/admin/travel">
-          <div class="admin-kicker">Travel</div>
-          <h3>管理游记</h3>
-          <p class="markdown-help">上传图片、设置封面，并发布带图游记内容。</p>
-        </a>
-      </div>
-    </div>
-  `;
-}
-
 async function publishSite() {
   const publishResponse = await apiFetch("/api/admin/publish", {
     method: "POST",
@@ -190,6 +164,50 @@ async function publishSite() {
     ok: true,
     output: publishResult.output ?? "发布成功。",
   };
+}
+
+function dashboardView() {
+  appEl.innerHTML = `
+    <div class="admin-grid">
+      <section>
+        <div class="admin-kicker">Overview</div>
+        <h2 class="admin-title" style="font-size:2.1rem">从这里管理首页、关于我、内容和图片</h2>
+        <p class="markdown-help">现在支持首页配置、关于我、博客、科研进展、游记的编辑，以及回收站查看、恢复与存档。</p>
+      </section>
+      <div class="admin-grid two">
+        <a class="admin-card upload-card" href="/admin/homepage">
+          <div class="admin-kicker">Homepage</div>
+          <h3>管理首页</h3>
+          <p class="markdown-help">修改首屏文字，增删预设首页板块，并调整显示顺序。</p>
+        </a>
+        <a class="admin-card upload-card" href="/admin/about">
+          <div class="admin-kicker">About</div>
+          <h3>管理关于我</h3>
+          <p class="markdown-help">编辑关于页文案、Quick Facts 和外部链接。</p>
+        </a>
+        <a class="admin-card upload-card" href="/admin/trash">
+          <div class="admin-kicker">Trash</div>
+          <h3>查看回收站</h3>
+          <p class="markdown-help">查看被删除内容，恢复或存档它们。</p>
+        </a>
+        <a class="admin-card upload-card" href="/admin/blog">
+          <div class="admin-kicker">Blog</div>
+          <h3>管理博客</h3>
+          <p class="markdown-help">新增、修改或移入回收区，支持封面图和 Markdown 正文。</p>
+        </a>
+        <a class="admin-card upload-card" href="/admin/research">
+          <div class="admin-kicker">Research</div>
+          <h3>管理科研进展</h3>
+          <p class="markdown-help">维护研究更新、项目状态和相关链接。</p>
+        </a>
+        <a class="admin-card upload-card" href="/admin/travel">
+          <div class="admin-kicker">Travel</div>
+          <h3>管理游记</h3>
+          <p class="markdown-help">上传图片、设置封面，并发布带图游记内容。</p>
+        </a>
+      </div>
+    </div>
+  `;
 }
 
 async function listView(collection, messageHtml = "") {
@@ -365,7 +383,6 @@ function buildEditorFields(collection, entry = null) {
 
 function parseFormPayload(collection, formData) {
   const payload = Object.fromEntries(formData.entries());
-
   payload.draft = formData.get("draft") === "on";
 
   if (collection === "blog") {
@@ -831,6 +848,357 @@ async function homepageView() {
   renderHomepageEditor();
 }
 
+function syncAboutStateFromDom() {
+  const form = document.getElementById("about-form");
+  if (!form || !aboutState) return;
+
+  aboutState.hero = {
+    eyebrow: form.querySelector('[data-about-hero="eyebrow"]').value.trim(),
+    title: form.querySelector('[data-about-hero="title"]').value.trim(),
+    intro: form.querySelector('[data-about-hero="intro"]').value.trim(),
+  };
+
+  aboutState.profileCard = {
+    sectionLabel: form.querySelector('[data-about-profile="sectionLabel"]').value.trim(),
+    title: form.querySelector('[data-about-profile="title"]').value.trim(),
+    body: form.querySelector('[data-about-profile="body"]').value.trim(),
+    secondaryBody: form.querySelector('[data-about-profile="secondaryBody"]').value.trim(),
+  };
+
+  aboutState.facts = {
+    sectionLabel: form.querySelector('[data-about-facts="sectionLabel"]').value.trim(),
+    locationLabel: form.querySelector('[data-about-facts="locationLabel"]').value.trim(),
+    location: form.querySelector('[data-about-facts="location"]').value.trim(),
+    emailLabel: form.querySelector('[data-about-facts="emailLabel"]').value.trim(),
+    email: form.querySelector('[data-about-facts="email"]').value.trim(),
+    topicsLabel: form.querySelector('[data-about-facts="topicsLabel"]').value.trim(),
+    topics: form.querySelector('[data-about-facts="topics"]').value.trim(),
+  };
+
+  aboutState.links = Array.from(form.querySelectorAll("[data-about-link]")).map((item) => ({
+    label: item.querySelector('[data-link-field="label"]').value.trim(),
+    href: item.querySelector('[data-link-field="href"]').value.trim(),
+  }));
+}
+
+function renderAboutEditor(messageHtml = "") {
+  if (!aboutState) return;
+
+  appEl.innerHTML = `
+    <div class="admin-grid">
+      <form id="about-form" class="admin-form">
+        <div class="admin-card upload-card">
+          <div class="admin-kicker">Hero</div>
+          <div class="admin-grid two">
+            <div class="field-group">
+              <label>Eyebrow</label>
+              <input data-about-hero="eyebrow" value="${escapeHtml(aboutState.hero.eyebrow ?? "")}" />
+            </div>
+            <div class="field-group">
+              <label>标题</label>
+              <input data-about-hero="title" value="${escapeHtml(aboutState.hero.title)}" />
+            </div>
+          </div>
+          <div class="field-group">
+            <label>导语</label>
+            <textarea data-about-hero="intro">${escapeHtml(aboutState.hero.intro)}</textarea>
+          </div>
+        </div>
+
+        <div class="admin-card upload-card">
+          <div class="admin-kicker">Profile Card</div>
+          <div class="admin-grid two">
+            <div class="field-group">
+              <label>Section Label</label>
+              <input data-about-profile="sectionLabel" value="${escapeHtml(aboutState.profileCard.sectionLabel ?? "")}" />
+            </div>
+            <div class="field-group">
+              <label>卡片标题</label>
+              <input data-about-profile="title" value="${escapeHtml(aboutState.profileCard.title)}" />
+            </div>
+          </div>
+          <div class="field-group">
+            <label>正文</label>
+            <textarea data-about-profile="body">${escapeHtml(aboutState.profileCard.body)}</textarea>
+          </div>
+          <div class="field-group">
+            <label>补充说明</label>
+            <textarea data-about-profile="secondaryBody">${escapeHtml(aboutState.profileCard.secondaryBody ?? "")}</textarea>
+          </div>
+        </div>
+
+        <div class="admin-card upload-card">
+          <div class="admin-kicker">Quick Facts</div>
+          <div class="admin-grid two">
+            <div class="field-group">
+              <label>Section Label</label>
+              <input data-about-facts="sectionLabel" value="${escapeHtml(aboutState.facts.sectionLabel ?? "")}" />
+            </div>
+            <div class="field-group">
+              <label>地点标签</label>
+              <input data-about-facts="locationLabel" value="${escapeHtml(aboutState.facts.locationLabel ?? "")}" />
+            </div>
+          </div>
+          <div class="admin-grid two">
+            <div class="field-group">
+              <label>地点</label>
+              <input data-about-facts="location" value="${escapeHtml(aboutState.facts.location ?? "")}" />
+            </div>
+            <div class="field-group">
+              <label>联系标签</label>
+              <input data-about-facts="emailLabel" value="${escapeHtml(aboutState.facts.emailLabel ?? "")}" />
+            </div>
+          </div>
+          <div class="admin-grid two">
+            <div class="field-group">
+              <label>邮箱 / 联系方式</label>
+              <input data-about-facts="email" value="${escapeHtml(aboutState.facts.email ?? "")}" />
+            </div>
+            <div class="field-group">
+              <label>主题标签</label>
+              <input data-about-facts="topicsLabel" value="${escapeHtml(aboutState.facts.topicsLabel ?? "")}" />
+            </div>
+          </div>
+          <div class="field-group">
+            <label>关注主题</label>
+            <textarea data-about-facts="topics">${escapeHtml(aboutState.facts.topics ?? "")}</textarea>
+          </div>
+        </div>
+
+        <div class="admin-card upload-card">
+          <div class="admin-kicker">Links</div>
+          <div class="admin-actions">
+            <button type="button" class="link-button button-secondary" id="add-about-link">新增外部链接</button>
+          </div>
+          <div class="admin-grid" id="about-links-list">
+            ${aboutState.links
+              .map(
+                (link, index) => `
+                  <div class="admin-card homepage-section-card" data-about-link>
+                    <div class="admin-actions admin-actions--spread">
+                      <div>
+                        <div class="admin-kicker">Link ${index + 1}</div>
+                      </div>
+                      <button type="button" class="link-button button-danger" data-remove-about-link="${index}">删除链接</button>
+                    </div>
+                    <div class="admin-grid two">
+                      <div class="field-group">
+                        <label>标签</label>
+                        <input data-link-field="label" value="${escapeHtml(link.label)}" />
+                      </div>
+                      <div class="field-group">
+                        <label>链接地址</label>
+                        <input data-link-field="href" value="${escapeHtml(link.href)}" />
+                      </div>
+                    </div>
+                  </div>`,
+              )
+              .join("")}
+          </div>
+        </div>
+
+        <div class="admin-actions">
+          <button type="submit" class="link-button button-secondary" data-action="save">保存关于我</button>
+          <button type="submit" class="link-button button-accent" data-action="publish">保存并发布关于我</button>
+        </div>
+        <div id="about-message">${messageHtml}</div>
+      </form>
+    </div>
+  `;
+
+  const form = document.getElementById("about-form");
+  const messageEl = document.getElementById("about-message");
+  let submitAction = "save";
+
+  form.querySelectorAll('[data-action="save"], [data-action="publish"]').forEach((button) => {
+    button.addEventListener("click", () => {
+      submitAction = button.dataset.action;
+    });
+  });
+
+  document.getElementById("add-about-link")?.addEventListener("click", () => {
+    syncAboutStateFromDom();
+    aboutState.links.push(defaultAboutLink());
+    renderAboutEditor(renderMessage("已新增一个外部链接表单。", "success"));
+  });
+
+  form.querySelectorAll("[data-remove-about-link]").forEach((button) => {
+    button.addEventListener("click", () => {
+      syncAboutStateFromDom();
+      const index = Number(button.getAttribute("data-remove-about-link"));
+      aboutState.links.splice(index, 1);
+      renderAboutEditor(renderMessage("外部链接已移除，记得保存。", "success"));
+    });
+  });
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    syncAboutStateFromDom();
+
+    const saveResponse = await apiFetch("/api/admin/about", {
+      method: "PUT",
+      body: JSON.stringify(aboutState),
+    });
+    if (!saveResponse) return;
+    const saveResult = await saveResponse.json();
+
+    if (!saveResponse.ok) {
+      messageEl.innerHTML = renderMessage(saveResult.error ?? "保存关于我失败。", "error");
+      return;
+    }
+
+    aboutState = saveResult.about;
+
+    if (submitAction === "save") {
+      renderAboutEditor(renderMessage("关于我已保存。", "success"));
+      return;
+    }
+
+    const publishResult = await publishSite();
+    if (!publishResult.ok) {
+      messageEl.innerHTML = renderMessage(publishResult.error, "error");
+      return;
+    }
+
+    renderAboutEditor(renderMessage(publishResult.output, "success"));
+  });
+}
+
+async function aboutView() {
+  const response = await apiFetch("/api/admin/about");
+  if (!response) return;
+  const result = await response.json();
+  if (!response.ok) {
+    appEl.innerHTML = renderMessage(result.error ?? "加载关于我失败。", "error");
+    return;
+  }
+
+  aboutState = result.about;
+  renderAboutEditor();
+}
+
+function renderTrashTabs(view) {
+  return `
+    <div class="admin-actions">
+      <button type="button" class="link-button ${view === "active" ? "button-accent" : "button-secondary"}" data-trash-view="active">回收中</button>
+      <button type="button" class="link-button ${view === "archived" ? "button-accent" : "button-secondary"}" data-trash-view="archived">已存档</button>
+    </div>
+  `;
+}
+
+async function trashView(view = "active", messageHtml = "") {
+  const response = await apiFetch(`/api/admin/trash?view=${view}`);
+  if (!response) return;
+  const result = await response.json();
+  if (!response.ok) {
+    appEl.innerHTML = renderMessage(result.error ?? "加载回收站失败。", "error");
+    return;
+  }
+
+  appEl.innerHTML = `
+    <div class="admin-grid">
+      <div id="trash-message">${messageHtml}</div>
+      ${renderTrashTabs(result.view)}
+      <div class="admin-list">
+        ${
+          result.items.length === 0
+            ? `<div class="admin-card upload-card"><p class="markdown-help">这个视图里暂时没有内容。</p></div>`
+            : result.items
+                .map(
+                  (item) => `
+                    <article class="admin-list-item">
+                      <div>
+                        <div class="meta-row">
+                          <span>${escapeHtml(item.collection)}</span>
+                          <span>${escapeHtml(new Date(item.deletedAt).toLocaleString("zh-CN"))}</span>
+                          <span>${escapeHtml(item.status)}</span>
+                        </div>
+                        <h3>${escapeHtml(item.title)}</h3>
+                        <p class="markdown-help">slug: ${escapeHtml(item.slug)}</p>
+                        <p class="markdown-help">来源: ${escapeHtml(item.sourcePath)}</p>
+                        <p class="markdown-help">当前位置: ${escapeHtml(item.currentPath)}</p>
+                      </div>
+                      <div class="admin-actions">
+                        <button type="button" class="link-button button-secondary" data-trash-restore="${escapeHtml(item.id)}">恢复</button>
+                        ${
+                          item.status === "active"
+                            ? `<button type="button" class="link-button button-secondary" data-trash-archive="${escapeHtml(item.id)}">存档</button>`
+                            : ""
+                        }
+                      </div>
+                    </article>`,
+                )
+                .join("")
+        }
+      </div>
+    </div>
+  `;
+
+  appEl.querySelectorAll("[data-trash-view]").forEach((button) => {
+    button.addEventListener("click", () => {
+      trashView(button.getAttribute("data-trash-view"));
+    });
+  });
+
+  const messageEl = document.getElementById("trash-message");
+
+  appEl.querySelectorAll("[data-trash-restore]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const id = button.getAttribute("data-trash-restore");
+      if (!id) return;
+
+      messageEl.innerHTML = renderMessage("正在恢复并发布，请稍候……", "success");
+      const restoreResponse = await apiFetch(`/api/admin/trash/${id}/restore`, {
+        method: "POST",
+        body: JSON.stringify({}),
+      });
+
+      if (!restoreResponse) return;
+      const restoreResult = await restoreResponse.json();
+      if (!restoreResponse.ok) {
+        messageEl.innerHTML = renderMessage(restoreResult.error ?? "恢复失败。", "error");
+        return;
+      }
+
+      const publishResult = await publishSite();
+      if (!publishResult.ok) {
+        messageEl.innerHTML = renderMessage(publishResult.error, "error");
+        return;
+      }
+
+      await trashView(view, renderMessage("内容已恢复并完成发布。", "success"));
+    });
+  });
+
+  appEl.querySelectorAll("[data-trash-archive]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const id = button.getAttribute("data-trash-archive");
+      if (!id) return;
+
+      messageEl.innerHTML = renderMessage("正在存档并发布，请稍候……", "success");
+      const archiveResponse = await apiFetch(`/api/admin/trash/${id}/archive`, {
+        method: "POST",
+        body: JSON.stringify({}),
+      });
+
+      if (!archiveResponse) return;
+      const archiveResult = await archiveResponse.json();
+      if (!archiveResponse.ok) {
+        messageEl.innerHTML = renderMessage(archiveResult.error ?? "存档失败。", "error");
+        return;
+      }
+
+      const publishResult = await publishSite();
+      if (!publishResult.ok) {
+        messageEl.innerHTML = renderMessage(publishResult.error, "error");
+        return;
+      }
+
+      await trashView(view, renderMessage("内容已存档并完成发布。", "success"));
+    });
+  });
+}
+
 async function init() {
   const sessionResponse = await apiFetch("/api/admin/session");
   if (!sessionResponse) return;
@@ -855,6 +1223,16 @@ async function init() {
 
   if (pathname === "/admin/homepage") {
     await homepageView();
+    return;
+  }
+
+  if (pathname === "/admin/about") {
+    await aboutView();
+    return;
+  }
+
+  if (pathname === "/admin/trash") {
+    await trashView();
     return;
   }
 

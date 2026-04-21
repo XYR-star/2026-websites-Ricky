@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
-import { collections, trashRoot } from "./config.mjs";
+import { collections, trashArchiveRoot, trashRoot } from "./config.mjs";
 
 function slugify(value) {
   const normalized = value
@@ -199,6 +199,7 @@ export function trashContent(collectionName, slug) {
     throw new Error("Content entry not found.");
   }
 
+  const item = parseEntry(filePath);
   const targetDir = path.join(trashRoot, collectionName);
   fs.mkdirSync(targetDir, { recursive: true });
 
@@ -207,7 +208,41 @@ export function trashContent(collectionName, slug) {
   fs.renameSync(filePath, targetPath);
 
   return {
+    id: `${collectionName}:${slug}:${timestamp}`,
+    title: item.data.title ?? slug,
+    collection: collectionName,
     slug,
+    sourcePath: filePath,
+    currentPath: targetPath,
+    deletedAt: new Date().toISOString(),
     targetPath,
   };
+}
+
+export function restoreTrashedContent(item) {
+  const collection = ensureCollection(item.collection);
+  const restoredPath = path.join(collection.dir, `${item.slug}.md`);
+
+  if (!fs.existsSync(item.currentPath)) {
+    throw new Error("Archived content file not found.");
+  }
+
+  if (fs.existsSync(restoredPath)) {
+    throw new Error("A content file with the same slug already exists.");
+  }
+
+  fs.renameSync(item.currentPath, restoredPath);
+  return restoredPath;
+}
+
+export function archiveTrashedContent(item) {
+  if (!fs.existsSync(item.currentPath)) {
+    throw new Error("Trash content file not found.");
+  }
+
+  const archiveDir = path.join(trashArchiveRoot, item.collection);
+  fs.mkdirSync(archiveDir, { recursive: true });
+  const archivedPath = path.join(archiveDir, path.basename(item.currentPath));
+  fs.renameSync(item.currentPath, archivedPath);
+  return archivedPath;
 }

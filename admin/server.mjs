@@ -9,6 +9,7 @@ import {
   adminPasswordHash,
   adminPort,
   adminUsername,
+  aboutConfigPath,
   collections,
   ensureRuntimeSetup,
   homepageSectionTypes,
@@ -20,14 +21,18 @@ import {
   securityStorePath,
   sessionsStorePath,
   staticDir,
+  trashIndexPath,
 } from "./lib/config.mjs";
 import {
+  archiveTrashedContent,
   createContent,
   getContent,
   listContent,
+  restoreTrashedContent,
   trashContent,
   updateContent,
 } from "./lib/content.mjs";
+import { getAboutConfig, updateAboutConfig } from "./lib/about.mjs";
 import { getHomepageConfig, updateHomepageConfig } from "./lib/homepage.mjs";
 import { createJsonStore } from "./lib/store.mjs";
 import {
@@ -47,6 +52,7 @@ ensureRuntimeSetup();
 const app = express();
 const securityStore = createJsonStore(securityStorePath, {});
 const sessionsStore = createJsonStore(sessionsStorePath, {});
+const trashStore = createJsonStore(trashIndexPath, []);
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
@@ -56,6 +62,30 @@ const upload = multer({
 
 function jsonError(res, status, error) {
   return res.status(status).json({ ok: false, error });
+}
+
+function getTrashEntries(view = "active") {
+  const items = trashStore.read();
+  return items
+    .filter((item) => item.status === view)
+    .sort((a, b) => new Date(b.deletedAt).getTime() - new Date(a.deletedAt).getTime());
+}
+
+function updateTrashEntry(id, updater) {
+  const items = trashStore.read();
+  const index = items.findIndex((item) => item.id === id);
+  if (index === -1) {
+    throw new Error("Trash item not found.");
+  }
+
+  const updated = updater(items[index]);
+  if (updated === null) {
+    items.splice(index, 1);
+  } else {
+    items[index] = updated;
+  }
+  trashStore.write(items);
+  return updated;
 }
 
 function requireAuth(req, res, next) {
@@ -193,6 +223,7 @@ app.get("/api/admin/session", (req, res) => {
     username: session.username,
     csrfToken: session.csrfToken,
     homepageSectionTypes,
+    hasAboutConfig: fs.existsSync(aboutConfigPath),
   });
 });
 
@@ -272,7 +303,36 @@ app.put("/api/admin/content/:collection/:slug", requireAuth, requireCsrf, (req, 
 app.delete("/api/admin/content/:collection/:slug", requireAuth, requireCsrf, (req, res) => {
   try {
     const result = trashContent(req.params.collection, req.params.slug);
-    return res.json({ ok: true, slug: result.slug, targetPath: result.targetPath });
+    const items = trashStore.read();
+    items.push({
+      id: result.id,
+      collection: result.collection,
+      slug: result.slug,
+      title: result.title,
+      deletedAt: result.deletedAt,
+      status: "active",
+      sourcePath: result.sourcePath,
+      currentPath: result.currentPath,
+    });
+    trashStore.write(items);
+    return res.json({ ok: true, slug: result.slug, id: result.id });
+  } catch (error) {
+    return jsonError(res, 400, error.message);
+  }
+});
+
+app.get("/api/admin/about", requireAuth, (_req, res) => {
+  try {
+    return res.json({ ok: true, about: getAboutConfig() });
+  } catch (error) {
+    return jsonError(res, 500, error.message);
+  }
+});
+
+app.put("/api/admin/about", requireAuth, requireCsrf, (req, res) => {
+  try {
+    const about = updateAboutConfig(req.body ?? {});
+    return res.json({ ok: true, about });
   } catch (error) {
     return jsonError(res, 400, error.message);
   }
@@ -287,6 +347,45 @@ app.get("/api/admin/homepage", requireAuth, (_req, res) => {
     });
   } catch (error) {
     return jsonError(res, 500, error.message);
+  }
+});
+
+app.get("/api/admin/trash", requireAuth, (req, res) => {
+  try {
+    const view = req.query.view === "archived" ? "archived" : "active";
+    return res.json({ ok: true, items: getTrashEntries(view), view });
+  } catch (error) {
+    return jsonError(res, 500, error.message);
+  }
+});
+
+app.post("/api/admin/trash/:id/restore", requireAuth, requireCsrf, (req, res) => {
+  try {
+    const updated = updateTrashEntry(req.params.id, (item) => {
+      restoreTrashedContent(item);
+      return null;
+    });
+
+    return res.json({ ok: true, item: updated });
+  } catch (error) {
+    return jsonError(res, 400, error.message);
+  }
+});
+
+app.post("/api/admin/trash/:id/archive", requireAuth, requireCsrf, (req, res) => {
+  try {
+    const updated = updateTrashEntry(req.params.id, (item) => {
+      const currentPath = archiveTrashedContent(item);
+      return {
+        ...item,
+        currentPath,
+        status: "archived",
+      };
+    });
+
+    return res.json({ ok: true, item: updated });
+  } catch (error) {
+    return jsonError(res, 400, error.message);
   }
 });
 
