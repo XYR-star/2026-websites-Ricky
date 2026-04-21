@@ -151,6 +151,17 @@ select {
   background: rgba(255, 251, 246, 0.76);
 }
 
+.button-danger {
+  color: #7d2619;
+  border-color: rgba(138, 63, 45, 0.26);
+  background: rgba(255, 239, 234, 0.85);
+}
+
+.button-secondary:hover,
+.button-danger:hover {
+  border-color: var(--admin-line-strong);
+}
+
 .admin-main {
   padding: 1rem;
 }
@@ -265,6 +276,23 @@ select {
   font-size: 0.95rem;
   color: var(--admin-muted);
   word-break: break-all;
+}
+
+.admin-actions--spread {
+  justify-content: space-between;
+  align-items: start;
+}
+
+.admin-subtitle {
+  margin: 0.2rem 0 0;
+  font-family: var(--admin-serif);
+  font-size: 1.45rem;
+  font-weight: 500;
+}
+
+.homepage-section-card {
+  display: grid;
+  gap: 1rem;
 }
 
 .markdown-help {

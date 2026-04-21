@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
-import { collections } from "./config.mjs";
+import { collections, trashRoot } from "./config.mjs";
 
 function slugify(value) {
   const normalized = value
@@ -190,4 +190,24 @@ export function updateContent(collectionName, slug, payload) {
   fs.writeFileSync(filePath, output);
 
   return { slug, filePath };
+}
+
+export function trashContent(collectionName, slug) {
+  const collection = ensureCollection(collectionName);
+  const filePath = path.join(collection.dir, `${slug}.md`);
+  if (!fs.existsSync(filePath)) {
+    throw new Error("Content entry not found.");
+  }
+
+  const targetDir = path.join(trashRoot, collectionName);
+  fs.mkdirSync(targetDir, { recursive: true });
+
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const targetPath = path.join(targetDir, `${timestamp}-${slug}.md`);
+  fs.renameSync(filePath, targetPath);
+
+  return {
+    slug,
+    targetPath,
+  };
 }

@@ -1,10 +1,12 @@
 let csrfToken = "";
+let homepageSectionTypes = [];
+let homepageState = null;
 
 const appEl = document.getElementById("app");
 const logoutButton = document.getElementById("logout-button");
 
 function escapeHtml(value = "") {
-  return value
+  return String(value)
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
@@ -12,13 +14,88 @@ function escapeHtml(value = "") {
 }
 
 function slugify(value = "") {
-  return value
+  return String(value)
     .normalize("NFKD")
     .replace(/[^\w\s-]/g, "")
     .trim()
     .replace(/[\s_-]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .toLowerCase();
+}
+
+function createSectionId(type) {
+  return `${slugify(type)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function defaultHomepageSection(type, order) {
+  const base = {
+    id: createSectionId(type),
+    type,
+    enabled: true,
+    order,
+    eyebrow: "",
+    title: "",
+    linkLabel: "",
+    linkHref: "",
+  };
+
+  if (type === "quote") {
+    return {
+      ...base,
+      eyebrow: "Editorial Note",
+      quote: "在这里写下一段你想放在首页的重要句子。",
+    };
+  }
+
+  if (type === "aboutNote") {
+    return {
+      ...base,
+      eyebrow: "关于这里",
+      body: "这里可以放一段关于站点、写作方向或近期关注主题的说明。",
+      linkLabel: "查看更多",
+      linkHref: "/about",
+    };
+  }
+
+  if (type === "richText") {
+    return {
+      ...base,
+      eyebrow: "Notes",
+      title: "新的文字区块",
+      body: "这里可以写一段自由文字。\n\n支持用空行分段。",
+      linkLabel: "",
+      linkHref: "",
+    };
+  }
+
+  const presets = {
+    featuredPosts: {
+      eyebrow: "Selected Essays",
+      title: "最近博客",
+      linkLabel: "查看全部文章",
+      linkHref: "/blog",
+      count: 3,
+    },
+    travelList: {
+      eyebrow: "Travel Notes",
+      title: "游记",
+      linkLabel: "查看游记",
+      linkHref: "/travel",
+      count: 3,
+    },
+    researchList: {
+      eyebrow: "Research Log",
+      title: "科研进展",
+      linkLabel: "进入研究日志",
+      linkHref: "/research",
+      count: 3,
+    },
+  };
+
+  return {
+    ...base,
+    ...presets[type],
+  };
 }
 
 async function apiFetch(url, options = {}) {
@@ -50,19 +127,31 @@ function setActiveNav(pathname) {
   });
 }
 
+function renderMessage(text = "", type = "success") {
+  if (!text) {
+    return "";
+  }
+  return `<div class="admin-message ${type}">${escapeHtml(text)}</div>`;
+}
+
 function dashboardView() {
   appEl.innerHTML = `
     <div class="admin-grid">
       <section>
         <div class="admin-kicker">Overview</div>
-        <h2 class="admin-title" style="font-size:2.1rem">从这里进入各个内容板块</h2>
-        <p class="markdown-help">第一版支持博客、科研进展和游记的 Markdown 编辑，以及图片上传和一键发布。</p>
+        <h2 class="admin-title" style="font-size:2.1rem">从这里管理首页、内容和图片</h2>
+        <p class="markdown-help">现在支持首页配置、博客、科研进展、游记的 Markdown 编辑，以及内容移入回收区删除与一键发布。</p>
       </section>
       <div class="admin-grid two">
+        <a class="admin-card upload-card" href="/admin/homepage">
+          <div class="admin-kicker">Homepage</div>
+          <h3>管理首页</h3>
+          <p class="markdown-help">修改首屏文字，增删预设首页板块，并调整显示顺序。</p>
+        </a>
         <a class="admin-card upload-card" href="/admin/blog">
           <div class="admin-kicker">Blog</div>
           <h3>管理博客</h3>
-          <p class="markdown-help">新增、修改博客文章，支持封面图和 Markdown 正文。</p>
+          <p class="markdown-help">新增、修改或移入回收区，支持封面图和 Markdown 正文。</p>
         </a>
         <a class="admin-card upload-card" href="/admin/research">
           <div class="admin-kicker">Research</div>
@@ -79,14 +168,31 @@ function dashboardView() {
   `;
 }
 
-function renderMessage(text = "", type = "success") {
-  if (!text) {
-    return "";
+async function publishSite() {
+  const publishResponse = await apiFetch("/api/admin/publish", {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+
+  if (!publishResponse) {
+    return { ok: false, error: "发布请求失败。" };
   }
-  return `<div class="admin-message ${type}">${escapeHtml(text)}</div>`;
+
+  const publishResult = await publishResponse.json();
+  if (!publishResponse.ok) {
+    return {
+      ok: false,
+      error: publishResult.error ?? publishResult.output ?? "发布失败。",
+    };
+  }
+
+  return {
+    ok: true,
+    output: publishResult.output ?? "发布成功。",
+  };
 }
 
-async function listView(collection) {
+async function listView(collection, messageHtml = "") {
   const response = await apiFetch(`/api/admin/content/${collection}`);
   if (!response) return;
   const result = await response.json();
@@ -98,6 +204,7 @@ async function listView(collection) {
 
   appEl.innerHTML = `
     <div class="admin-grid">
+      <div id="list-message">${messageHtml}</div>
       <div class="admin-actions">
         <a class="link-button button-accent" href="/admin/${collection}/new">新建${titleMap[collection]}</a>
       </div>
@@ -114,13 +221,47 @@ async function listView(collection) {
                 <h3>${escapeHtml(item.title)}</h3>
                 <p class="markdown-help">${escapeHtml(item.description ?? "")}</p>
               </div>
-              <a class="link-button button-secondary" href="/admin/${collection}/${item.slug}">编辑</a>
+              <div class="admin-actions">
+                <a class="link-button button-secondary" href="/admin/${collection}/${item.slug}">编辑</a>
+                <button class="link-button button-danger" type="button" data-delete-slug="${escapeHtml(item.slug)}">删除</button>
+              </div>
             </article>`,
           )
           .join("")}
       </div>
     </div>
   `;
+
+  const messageEl = document.getElementById("list-message");
+  appEl.querySelectorAll("[data-delete-slug]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const slug = button.getAttribute("data-delete-slug");
+      if (!slug) return;
+      const confirmed = window.confirm("这篇内容会被移到回收区，并重新发布站点。要继续吗？");
+      if (!confirmed) return;
+
+      messageEl.innerHTML = renderMessage("正在移到回收区并发布，请稍候……", "success");
+      const deleteResponse = await apiFetch(`/api/admin/content/${collection}/${slug}`, {
+        method: "DELETE",
+        body: JSON.stringify({}),
+      });
+
+      if (!deleteResponse) return;
+      const deleteResult = await deleteResponse.json();
+      if (!deleteResponse.ok) {
+        messageEl.innerHTML = renderMessage(deleteResult.error ?? "删除失败。", "error");
+        return;
+      }
+
+      const publishResult = await publishSite();
+      if (!publishResult.ok) {
+        messageEl.innerHTML = renderMessage(publishResult.error, "error");
+        return;
+      }
+
+      await listView(collection, renderMessage("已移到回收区并完成发布。", "success"));
+    });
+  });
 }
 
 function buildEditorFields(collection, entry = null) {
@@ -372,7 +513,7 @@ async function editorView(collection, slug = null) {
     }
 
     if (submitAction === "save") {
-      messageEl.innerHTML = renderMessage("已保存草稿。", "success");
+      messageEl.innerHTML = renderMessage("已保存内容。", "success");
       if (isNew) {
         window.history.replaceState({}, "", `/admin/${collection}/${saveResult.slug}`);
       }
@@ -380,24 +521,314 @@ async function editorView(collection, slug = null) {
     }
 
     messageEl.innerHTML = renderMessage("正在构建并发布，请稍候……", "success");
-    const publishResponse = await apiFetch("/api/admin/publish", {
-      method: "POST",
-      body: JSON.stringify({}),
-    });
-
-    if (!publishResponse) return;
-    const publishResult = await publishResponse.json();
-
-    if (!publishResponse.ok) {
-      messageEl.innerHTML = renderMessage(
-        publishResult.error ?? publishResult.output ?? "发布失败。",
-        "error",
-      );
+    const publishResult = await publishSite();
+    if (!publishResult.ok) {
+      messageEl.innerHTML = renderMessage(publishResult.error, "error");
       return;
     }
 
-    messageEl.innerHTML = renderMessage(publishResult.output ?? "发布成功。", "success");
+    messageEl.innerHTML = renderMessage(publishResult.output, "success");
   });
+}
+
+function renderHomepageSectionFields(section) {
+  const typeLabelMap = {
+    featuredPosts: "博客列表",
+    travelList: "游记列表",
+    researchList: "科研列表",
+    aboutNote: "说明卡片",
+    quote: "引用块",
+    richText: "自由文字",
+  };
+
+  const common = `
+    <div class="admin-grid two">
+      <div class="field-group">
+        <label>区块 ID</label>
+        <input data-homepage-field="id" value="${escapeHtml(section.id)}" required />
+      </div>
+      <div class="field-group">
+        <label>类型</label>
+        <input value="${escapeHtml(typeLabelMap[section.type] ?? section.type)}" readonly />
+      </div>
+    </div>
+    <div class="admin-grid two">
+      <div class="field-group">
+        <label>Eyebrow</label>
+        <input data-homepage-field="eyebrow" value="${escapeHtml(section.eyebrow ?? "")}" />
+      </div>
+      <div class="field-group field-inline" style="padding-top:2rem">
+        <input data-homepage-field="enabled" type="checkbox" ${section.enabled ? "checked" : ""} />
+        <label>启用这个板块</label>
+      </div>
+    </div>
+  `;
+
+  if (["featuredPosts", "travelList", "researchList"].includes(section.type)) {
+    return `
+      ${common}
+      <div class="admin-grid two">
+        <div class="field-group">
+          <label>标题</label>
+          <input data-homepage-field="title" value="${escapeHtml(section.title ?? "")}" />
+        </div>
+        <div class="field-group">
+          <label>显示数量</label>
+          <input data-homepage-field="count" type="number" min="1" max="12" value="${escapeHtml(String(section.count ?? 3))}" />
+        </div>
+      </div>
+      <div class="admin-grid two">
+        <div class="field-group">
+          <label>链接文案</label>
+          <input data-homepage-field="linkLabel" value="${escapeHtml(section.linkLabel ?? "")}" />
+        </div>
+        <div class="field-group">
+          <label>链接地址</label>
+          <input data-homepage-field="linkHref" value="${escapeHtml(section.linkHref ?? "")}" />
+        </div>
+      </div>
+    `;
+  }
+
+  if (section.type === "quote") {
+    return `
+      ${common}
+      <div class="field-group">
+        <label>引用文字</label>
+        <textarea data-homepage-field="quote">${escapeHtml(section.quote ?? "")}</textarea>
+      </div>
+    `;
+  }
+
+  return `
+    ${common}
+    <div class="field-group">
+      <label>标题</label>
+      <input data-homepage-field="title" value="${escapeHtml(section.title ?? "")}" />
+    </div>
+    <div class="field-group">
+      <label>正文</label>
+      <textarea data-homepage-field="body">${escapeHtml(section.body ?? "")}</textarea>
+    </div>
+    <div class="admin-grid two">
+      <div class="field-group">
+        <label>链接文案</label>
+        <input data-homepage-field="linkLabel" value="${escapeHtml(section.linkLabel ?? "")}" />
+      </div>
+      <div class="field-group">
+        <label>链接地址</label>
+        <input data-homepage-field="linkHref" value="${escapeHtml(section.linkHref ?? "")}" />
+      </div>
+    </div>
+  `;
+}
+
+function syncHomepageStateFromDom() {
+  const form = document.getElementById("homepage-form");
+  if (!form || !homepageState) return;
+
+  homepageState.hero = {
+    id: form.querySelector('[data-homepage-hero="id"]').value.trim(),
+    eyebrow: form.querySelector('[data-homepage-hero="eyebrow"]').value.trim(),
+    title: form.querySelector('[data-homepage-hero="title"]').value.trim(),
+    intro: form.querySelector('[data-homepage-hero="intro"]').value.trim(),
+  };
+
+  homepageState.sections = Array.from(form.querySelectorAll("[data-homepage-section]")).map((card, index) => {
+    const type = card.getAttribute("data-section-type");
+    const section = {
+      id: card.querySelector('[data-homepage-field="id"]').value.trim(),
+      type,
+      enabled: card.querySelector('[data-homepage-field="enabled"]').checked,
+      order: (index + 1) * 10,
+      eyebrow: card.querySelector('[data-homepage-field="eyebrow"]').value.trim(),
+      title: card.querySelector('[data-homepage-field="title"]')?.value.trim() ?? "",
+      linkLabel: card.querySelector('[data-homepage-field="linkLabel"]')?.value.trim() ?? "",
+      linkHref: card.querySelector('[data-homepage-field="linkHref"]')?.value.trim() ?? "",
+    };
+
+    if (["featuredPosts", "travelList", "researchList"].includes(type)) {
+      section.count = Number(card.querySelector('[data-homepage-field="count"]').value || 3);
+    }
+
+    if (type === "quote") {
+      section.quote = card.querySelector('[data-homepage-field="quote"]').value.trim();
+    }
+
+    if (["aboutNote", "richText"].includes(type)) {
+      section.body = card.querySelector('[data-homepage-field="body"]').value.trim();
+    }
+
+    return section;
+  });
+}
+
+function renderHomepageEditor(messageHtml = "") {
+  if (!homepageState) return;
+
+  appEl.innerHTML = `
+    <div class="admin-grid">
+      <form id="homepage-form" class="admin-form">
+        <div class="admin-card upload-card">
+          <div class="admin-kicker">Hero</div>
+          <div class="admin-grid two">
+            <div class="field-group">
+              <label>Hero ID</label>
+              <input data-homepage-hero="id" value="${escapeHtml(homepageState.hero.id)}" required />
+            </div>
+            <div class="field-group">
+              <label>Eyebrow</label>
+              <input data-homepage-hero="eyebrow" value="${escapeHtml(homepageState.hero.eyebrow ?? "")}" />
+            </div>
+          </div>
+          <div class="field-group">
+            <label>主标题</label>
+            <textarea data-homepage-hero="title">${escapeHtml(homepageState.hero.title)}</textarea>
+          </div>
+          <div class="field-group">
+            <label>简介</label>
+            <textarea data-homepage-hero="intro">${escapeHtml(homepageState.hero.intro)}</textarea>
+          </div>
+        </div>
+
+        <div class="admin-card upload-card">
+          <div class="admin-kicker">Sections</div>
+          <p class="markdown-help">可以新增、排序、隐藏或删除首页预设板块。删除只影响首页配置，不会删除文章内容。</p>
+          <div class="admin-actions">
+            ${homepageSectionTypes
+              .map(
+                (type) => `
+                  <button type="button" class="link-button button-secondary" data-add-section="${type}">
+                    新增 ${escapeHtml(type)}
+                  </button>`,
+              )
+              .join("")}
+          </div>
+        </div>
+
+        <div class="admin-grid" id="homepage-section-list">
+          ${homepageState.sections
+            .map(
+              (section, index) => `
+                <section class="admin-card upload-card homepage-section-card" data-homepage-section data-section-type="${escapeHtml(section.type)}">
+                  <div class="admin-actions admin-actions--spread">
+                    <div>
+                      <div class="admin-kicker">Section ${index + 1}</div>
+                      <h3 class="admin-subtitle">${escapeHtml(section.title || section.eyebrow || section.type)}</h3>
+                    </div>
+                    <div class="admin-actions">
+                      <button type="button" class="link-button button-secondary" data-move-section="up" data-section-index="${index}">上移</button>
+                      <button type="button" class="link-button button-secondary" data-move-section="down" data-section-index="${index}">下移</button>
+                      <button type="button" class="link-button button-danger" data-remove-section="${index}">删除板块</button>
+                    </div>
+                  </div>
+                  ${renderHomepageSectionFields(section)}
+                </section>`,
+            )
+            .join("")}
+        </div>
+
+        <div class="admin-actions">
+          <button type="submit" class="link-button button-secondary" data-action="save">保存首页配置</button>
+          <button type="submit" class="link-button button-accent" data-action="publish">保存并发布首页</button>
+        </div>
+        <div id="homepage-message">${messageHtml}</div>
+      </form>
+    </div>
+  `;
+
+  const form = document.getElementById("homepage-form");
+  const messageEl = document.getElementById("homepage-message");
+  let submitAction = "save";
+
+  form.querySelectorAll('[data-action="save"], [data-action="publish"]').forEach((button) => {
+    button.addEventListener("click", () => {
+      submitAction = button.dataset.action;
+    });
+  });
+
+  form.querySelectorAll("[data-add-section]").forEach((button) => {
+    button.addEventListener("click", () => {
+      syncHomepageStateFromDom();
+      const type = button.getAttribute("data-add-section");
+      homepageState.sections.push(defaultHomepageSection(type, (homepageState.sections.length + 1) * 10));
+      renderHomepageEditor(renderMessage("已新增一个预设板块，记得保存。", "success"));
+    });
+  });
+
+  form.querySelectorAll("[data-move-section]").forEach((button) => {
+    button.addEventListener("click", () => {
+      syncHomepageStateFromDom();
+      const index = Number(button.getAttribute("data-section-index"));
+      const direction = button.getAttribute("data-move-section");
+      const targetIndex = direction === "up" ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= homepageState.sections.length) {
+        return;
+      }
+      const [section] = homepageState.sections.splice(index, 1);
+      homepageState.sections.splice(targetIndex, 0, section);
+      renderHomepageEditor();
+    });
+  });
+
+  form.querySelectorAll("[data-remove-section]").forEach((button) => {
+    button.addEventListener("click", () => {
+      syncHomepageStateFromDom();
+      const index = Number(button.getAttribute("data-remove-section"));
+      homepageState.sections.splice(index, 1);
+      renderHomepageEditor(renderMessage("板块已从首页配置中移除，记得保存。", "success"));
+    });
+  });
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    syncHomepageStateFromDom();
+
+    const saveResponse = await apiFetch("/api/admin/homepage", {
+      method: "PUT",
+      body: JSON.stringify(homepageState),
+    });
+
+    if (!saveResponse) return;
+    const saveResult = await saveResponse.json();
+
+    if (!saveResponse.ok) {
+      messageEl.innerHTML = renderMessage(saveResult.error ?? "保存首页配置失败。", "error");
+      return;
+    }
+
+    homepageState = saveResult.homepage;
+
+    if (submitAction === "save") {
+      renderHomepageEditor(renderMessage("首页配置已保存。", "success"));
+      return;
+    }
+
+    messageEl.innerHTML = renderMessage("首页配置已保存，正在构建并发布……", "success");
+    const publishResult = await publishSite();
+    if (!publishResult.ok) {
+      messageEl.innerHTML = renderMessage(publishResult.error, "error");
+      return;
+    }
+
+    renderHomepageEditor(renderMessage(publishResult.output, "success"));
+  });
+}
+
+async function homepageView() {
+  const response = await apiFetch("/api/admin/homepage");
+  if (!response) return;
+  const result = await response.json();
+  if (!response.ok) {
+    appEl.innerHTML = renderMessage(result.error ?? "加载首页配置失败。", "error");
+    return;
+  }
+
+  homepageState = result.homepage;
+  if (Array.isArray(result.sectionTypes) && result.sectionTypes.length > 0) {
+    homepageSectionTypes = result.sectionTypes;
+  }
+  renderHomepageEditor();
 }
 
 async function init() {
@@ -410,11 +841,20 @@ async function init() {
   }
 
   csrfToken = session.csrfToken;
+  if (Array.isArray(session.homepageSectionTypes) && session.homepageSectionTypes.length > 0) {
+    homepageSectionTypes = session.homepageSectionTypes;
+  }
+
   const pathname = window.location.pathname;
   setActiveNav(pathname);
 
   if (pathname === "/admin" || pathname === "/admin/") {
     dashboardView();
+    return;
+  }
+
+  if (pathname === "/admin/homepage") {
+    await homepageView();
     return;
   }
 

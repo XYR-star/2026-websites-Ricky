@@ -11,6 +11,7 @@ import {
   adminUsername,
   collections,
   ensureRuntimeSetup,
+  homepageSectionTypes,
   maxUploadBytes,
   projectRoot,
   publicImageRoot,
@@ -20,7 +21,14 @@ import {
   sessionsStorePath,
   staticDir,
 } from "./lib/config.mjs";
-import { createContent, getContent, listContent, updateContent } from "./lib/content.mjs";
+import {
+  createContent,
+  getContent,
+  listContent,
+  trashContent,
+  updateContent,
+} from "./lib/content.mjs";
+import { getHomepageConfig, updateHomepageConfig } from "./lib/homepage.mjs";
 import { createJsonStore } from "./lib/store.mjs";
 import {
   buildExpiredSessionCookie,
@@ -130,7 +138,7 @@ async function runPublish() {
 
   try {
     lockHandle = fs.openSync(publishLockPath, "wx");
-  } catch (error) {
+  } catch (_error) {
     return {
       ok: false,
       status: 409,
@@ -161,7 +169,7 @@ async function runPublish() {
 
 app.disable("x-powered-by");
 app.set("trust proxy", true);
-app.use(express.json({ limit: "1mb" }));
+app.use(express.json({ limit: "2mb" }));
 
 app.use((req, res, next) => {
   if (req.path.startsWith("/admin") || req.path.startsWith("/api/admin")) {
@@ -184,6 +192,7 @@ app.get("/api/admin/session", (req, res) => {
     authenticated: true,
     username: session.username,
     csrfToken: session.csrfToken,
+    homepageSectionTypes,
   });
 });
 
@@ -255,6 +264,36 @@ app.put("/api/admin/content/:collection/:slug", requireAuth, requireCsrf, (req, 
   try {
     const result = updateContent(req.params.collection, req.params.slug, req.body ?? {});
     return res.json({ ok: true, slug: result.slug });
+  } catch (error) {
+    return jsonError(res, 400, error.message);
+  }
+});
+
+app.delete("/api/admin/content/:collection/:slug", requireAuth, requireCsrf, (req, res) => {
+  try {
+    const result = trashContent(req.params.collection, req.params.slug);
+    return res.json({ ok: true, slug: result.slug, targetPath: result.targetPath });
+  } catch (error) {
+    return jsonError(res, 400, error.message);
+  }
+});
+
+app.get("/api/admin/homepage", requireAuth, (_req, res) => {
+  try {
+    return res.json({
+      ok: true,
+      homepage: getHomepageConfig(),
+      sectionTypes: homepageSectionTypes,
+    });
+  } catch (error) {
+    return jsonError(res, 500, error.message);
+  }
+});
+
+app.put("/api/admin/homepage", requireAuth, requireCsrf, (req, res) => {
+  try {
+    const homepage = updateHomepageConfig(req.body ?? {});
+    return res.json({ ok: true, homepage });
   } catch (error) {
     return jsonError(res, 400, error.message);
   }

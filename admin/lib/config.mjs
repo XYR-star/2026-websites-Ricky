@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const projectRoot = path.resolve(__dirname, "..", "..");
 export const runtimeDir = process.env.ADMIN_RUNTIME_DIR ?? "/var/lib/ricky-admin";
+export const trashRoot = path.join(projectRoot, ".admin-trash");
 export const collections = {
   blog: {
     dir: path.join(projectRoot, "src/content/blog"),
@@ -21,6 +22,7 @@ export const collections = {
 };
 
 export const publicImageRoot = path.join(projectRoot, "public/images");
+export const homepageConfigPath = path.join(projectRoot, "src/data/homepage.json");
 export const staticDir = path.join(projectRoot, "admin/static");
 export const adminPort = Number(process.env.ADMIN_PORT ?? "4322");
 export const adminUsername = process.env.ADMIN_USERNAME ?? "admin";
@@ -35,6 +37,14 @@ export const sessionsStorePath = path.join(runtimeDir, "sessions.json");
 export const publishLockPath = path.join(runtimeDir, "publish.lock");
 export const maxUploadBytes = 15 * 1024 * 1024;
 export const cookieSecure = process.env.ADMIN_COOKIE_SECURE !== "false";
+export const homepageSectionTypes = [
+  "featuredPosts",
+  "travelList",
+  "researchList",
+  "aboutNote",
+  "quote",
+  "richText",
+];
 
 export function ensureRuntimeSetup() {
   if (!adminPasswordHash || !sessionSecret) {
@@ -45,4 +55,5 @@ export function ensureRuntimeSetup() {
 
   fs.mkdirSync(runtimeDir, { recursive: true });
   fs.mkdirSync(publicImageRoot, { recursive: true });
+  fs.mkdirSync(trashRoot, { recursive: true });
 }
