@@ -5,6 +5,7 @@ import { spawn } from "node:child_process";
 import express from "express";
 import multer from "multer";
 import bcrypt from "bcryptjs";
+import { marked } from "marked";
 import {
   adminPasswordHash,
   adminPort,
@@ -434,6 +435,18 @@ app.post(
 app.post("/api/admin/publish", requireAuth, requireCsrf, async (_req, res) => {
   const result = await runPublish();
   return res.status(result.status).json(result);
+});
+
+app.post("/api/admin/preview", requireAuth, requireCsrf, async (req, res) => {
+  try {
+    const html = await marked.parse(String(req.body?.body ?? ""), {
+      gfm: true,
+      breaks: true,
+    });
+    return res.json({ ok: true, html });
+  } catch (error) {
+    return jsonError(res, 400, error.message);
+  }
 });
 
 app.get("/admin/login", (_req, res) => {

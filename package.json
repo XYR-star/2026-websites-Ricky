@@ -24,6 +24,7 @@
     "cookie": "^1.1.1",
     "express": "^5.2.1",
     "gray-matter": "^4.0.3",
+    "marked": "^18.0.2",
     "multer": "^2.1.1",
     "typescript": "^5.9.3"
   },

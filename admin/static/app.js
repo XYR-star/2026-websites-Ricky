@@ -2,6 +2,7 @@ let csrfToken = "";
 let homepageSectionTypes = [];
 let homepageState = null;
 let aboutState = null;
+let previewTimer = null;
 
 const appEl = document.getElementById("app");
 const logoutButton = document.getElementById("logout-button");
@@ -22,6 +23,13 @@ function slugify(value = "") {
     .replace(/[\s_-]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .toLowerCase();
+}
+
+function stripHtml(value = "") {
+  return String(value)
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function createSectionId(type) {
@@ -142,6 +150,131 @@ function renderMessage(text = "", type = "success") {
   return `<div class="admin-message ${type}">${escapeHtml(text)}</div>`;
 }
 
+function previewMetaLabel(collection, payload) {
+  if (collection === "blog") {
+    return (payload.tags ?? []).slice(0, 2).join(" · ") || "Blog";
+  }
+
+  if (collection === "research") {
+    return [payload.project, payload.status].filter(Boolean).join(" · ") || "Research";
+  }
+
+  return "Travel";
+}
+
+function enhancePreviewContent(root) {
+  if (!root) return;
+
+  const paragraphs = Array.from(root.querySelectorAll("p")).filter((node) => {
+    if (node.children.length !== 1) return false;
+    return node.firstElementChild?.tagName === "IMG";
+  });
+
+  paragraphs.forEach((paragraph) => {
+    const image = paragraph.querySelector("img");
+    if (!image) return;
+
+    const figure = document.createElement("figure");
+    figure.className = "preview-figure";
+    const captionText = image.getAttribute("title") || image.getAttribute("alt") || "";
+    paragraph.replaceWith(figure);
+    figure.appendChild(image);
+
+    if (captionText) {
+      const caption = document.createElement("figcaption");
+      caption.textContent = captionText;
+      figure.appendChild(caption);
+    }
+  });
+
+  const figures = Array.from(root.querySelectorAll(".preview-figure"));
+  let group = [];
+
+  const flushGroup = () => {
+    if (group.length <= 1) {
+      group = [];
+      return;
+    }
+
+    const gallery = document.createElement("div");
+    gallery.className = "preview-gallery";
+    gallery.dataset.gallerySize = String(Math.min(group.length, 4));
+    group[0].before(gallery);
+    group.forEach((item) => gallery.appendChild(item));
+    group = [];
+  };
+
+  figures.forEach((figure, index) => {
+    const previous = figures[index - 1];
+    if (!previous) {
+      group.push(figure);
+      return;
+    }
+
+    if (previous.nextElementSibling === figure) {
+      group.push(figure);
+      return;
+    }
+
+    flushGroup();
+    group.push(figure);
+  });
+
+  flushGroup();
+}
+
+function renderPreviewPanel(collection, payload, previewHtml = "") {
+  const host = document.getElementById("editor-preview");
+  if (!host) return;
+
+  const date = payload.date || new Date().toISOString().slice(0, 10);
+  const description = payload.description || payload.summary || "这里会显示正文预览。";
+  const title = payload.title || "未命名内容";
+  const meta = previewMetaLabel(collection, payload);
+
+  host.innerHTML = `
+    <div class="preview-shell">
+      <div class="admin-kicker">${escapeHtml(collection)}</div>
+      <h3 class="preview-title">${escapeHtml(title)}</h3>
+      <div class="meta-row">
+        <span>${escapeHtml(date)}</span>
+        <span>${escapeHtml(meta)}</span>
+      </div>
+      ${payload.cover ? `<img class="preview-cover" src="${escapeHtml(payload.cover)}" alt="${escapeHtml(title)}" />` : ""}
+      <p class="preview-description">${escapeHtml(description)}</p>
+      <div class="preview-divider"></div>
+      <div class="preview-prose" id="editor-preview-prose">${previewHtml || "<p>开始输入正文后，这里会实时更新。</p>"}</div>
+    </div>
+  `;
+
+  enhancePreviewContent(document.getElementById("editor-preview-prose"));
+}
+
+async function refreshPreview(form, collection) {
+  const payload = parseFormPayload(collection, new FormData(form));
+  renderPreviewPanel(collection, payload);
+
+  const response = await apiFetch("/api/admin/preview", {
+    method: "POST",
+    body: JSON.stringify({ body: payload.body ?? "" }),
+  });
+  if (!response) return;
+
+  const result = await response.json();
+  if (!response.ok) {
+    return;
+  }
+
+  renderPreviewPanel(collection, payload, result.html);
+}
+
+function schedulePreview(form, collection) {
+  window.clearTimeout(previewTimer);
+  previewTimer = window.setTimeout(() => {
+    refreshPreview(form, collection);
+  }, 220);
+}
+
 async function publishSite() {
   const publishResponse = await apiFetch("/api/admin/publish", {
     method: "POST",
@@ -172,7 +305,7 @@ function dashboardView() {
       <section>
         <div class="admin-kicker">Overview</div>
         <h2 class="admin-title" style="font-size:2.1rem">从这里管理首页、关于我、内容和图片</h2>
-        <p class="markdown-help">现在支持首页配置、关于我、博客、科研进展、游记的编辑，以及回收站查看、恢复与存档。</p>
+        <p class="markdown-help">现在支持首页配置、关于我、博客、科研进展、游记的编辑，正文实时预览，以及回收站查看、恢复与存档。</p>
       </section>
       <div class="admin-grid two">
         <a class="admin-card upload-card" href="/admin/homepage">
@@ -428,7 +561,7 @@ async function editorView(collection, slug = null) {
   }
 
   appEl.innerHTML = `
-    <div class="admin-grid">
+    <div class="editor-layout">
       <div class="admin-actions">
         <a class="link-button button-secondary" href="/admin/${collection}">返回列表</a>
       </div>
@@ -436,7 +569,7 @@ async function editorView(collection, slug = null) {
         ${buildEditorFields(collection, entry)}
         <div class="admin-card upload-card">
           <div class="admin-kicker">Image Upload</div>
-          <p class="markdown-help">上传后会返回站内图片路径，可以设为封面或插入 Markdown。</p>
+          <p class="markdown-help">上传后会返回站内图片路径，可以设为封面或插入 Markdown。连续插入多张图片会在详情页自动整理成图组。</p>
           <div class="admin-actions">
             <input id="image-file" type="file" accept="image/*" />
             <button type="button" class="link-button button-secondary" id="upload-trigger">上传图片</button>
@@ -449,6 +582,11 @@ async function editorView(collection, slug = null) {
         </div>
         <div id="editor-message"></div>
       </form>
+      <aside class="admin-card upload-card preview-panel">
+        <div class="admin-kicker">Live Preview</div>
+        <p class="markdown-help">会根据当前表单实时渲染 Markdown、封面与多图排布。</p>
+        <div id="editor-preview"></div>
+      </aside>
     </div>
   `;
 
@@ -497,8 +635,13 @@ async function editorView(collection, slug = null) {
 
     document.getElementById("insert-markdown")?.addEventListener("click", () => {
       const body = form.querySelector("#body");
-      body.value += `\n![图片说明](${result.path})\n`;
+      body.value += `\n![图片说明](${result.path} "图片说明")\n`;
+      schedulePreview(form, collection);
     });
+  });
+
+  form.addEventListener("input", () => {
+    schedulePreview(form, collection);
   });
 
   let submitAction = "save";
@@ -546,6 +689,8 @@ async function editorView(collection, slug = null) {
 
     messageEl.innerHTML = renderMessage(publishResult.output, "success");
   });
+
+  schedulePreview(form, collection);
 }
 
 function renderHomepageSectionFields(section) {
