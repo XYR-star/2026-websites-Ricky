@@ -21,3 +21,7 @@ export function getVisiblePosts(posts: CollectionEntry<"blog">[]) {
 export function getVisibleTravelPosts(posts: CollectionEntry<"travel">[]) {
   return sortByDateDesc(posts.filter((post) => !post.data.draft));
 }
+
+export function getVisibleResearchEntries(items: CollectionEntry<"research">[]) {
+  return sortByDateDesc(items);
+}

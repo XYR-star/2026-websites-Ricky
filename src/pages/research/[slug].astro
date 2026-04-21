@@ -1,0 +1,28 @@
+---
+import { getCollection, render } from "astro:content";
+import PostLayout from "../../layouts/PostLayout.astro";
+import { getVisibleResearchEntries } from "../../lib/content";
+
+export async function getStaticPaths() {
+  const items = getVisibleResearchEntries(await getCollection("research"));
+
+  return items.map((item) => ({
+    params: { slug: item.slug },
+    props: { item },
+  }));
+}
+
+const { item } = Astro.props;
+const { Content } = await render(item);
+const researchTags = [item.data.project, item.data.status].filter(Boolean) as string[];
+---
+
+<PostLayout
+  title={item.data.title}
+  description={item.data.summary}
+  date={item.data.date}
+  tags={researchTags}
+  eyebrow="Research"
+>
+  <Content />
+</PostLayout>
