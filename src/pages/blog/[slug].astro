@@ -1,7 +1,11 @@
 ---
 import { getCollection, render } from "astro:content";
 import PostLayout from "../../layouts/PostLayout.astro";
-import { getVisiblePosts } from "../../lib/content";
+import {
+  getContentNeighbors,
+  getRelatedPosts,
+  getVisiblePosts,
+} from "../../lib/content";
 
 export async function getStaticPaths() {
   const posts = getVisiblePosts(await getCollection("blog"));
@@ -14,6 +18,14 @@ export async function getStaticPaths() {
 
 const { post } = Astro.props;
 const { Content } = await render(post);
+const posts = getVisiblePosts(await getCollection("blog"));
+const { previous, next } = getContentNeighbors(posts, post.slug);
+const related = getRelatedPosts(posts, post).map((item) => ({
+  href: `/blog/${item.slug}`,
+  title: item.data.title,
+  description: item.data.description,
+  meta: item.data.tags[0] ?? "Blog",
+}));
 ---
 
 <PostLayout
@@ -23,6 +35,17 @@ const { Content } = await render(post);
   tags={post.data.tags}
   cover={post.data.cover}
   eyebrow="Essay"
+  previous={previous && {
+    href: `/blog/${previous.slug}`,
+    title: previous.data.title,
+    description: previous.data.description,
+  }}
+  next={next && {
+    href: `/blog/${next.slug}`,
+    title: next.data.title,
+    description: next.data.description,
+  }}
+  related={related}
 >
   <Content />
 </PostLayout>

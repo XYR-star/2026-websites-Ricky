@@ -1,0 +1,35 @@
+---
+import { getCollection } from "astro:content";
+import PostCard from "../../components/PostCard.astro";
+import SiteLayout from "../../layouts/SiteLayout.astro";
+import { getBlogTags, getVisiblePosts } from "../../lib/content";
+
+export async function getStaticPaths() {
+  const tags = getBlogTags(getVisiblePosts(await getCollection("blog")));
+  return tags.map((tag) => ({
+    params: { tag: tag.slug },
+    props: { tag },
+  }));
+}
+
+const { tag } = Astro.props;
+---
+
+<SiteLayout title={`${tag.tag} · 标签`} description={`查看与 ${tag.tag} 相关的博客文章`}>
+  <section class="shell page-hero">
+    <div class="eyebrow">Tag Archive</div>
+    <h1>{tag.tag}</h1>
+    <p>共收录 {tag.count} 篇文章。按主题重新查看相关判断、写作与记录。</p>
+  </section>
+
+  <section class="shell section">
+    <div class="section__head">
+      <a class="section__link" href="/tags">返回所有标签</a>
+    </div>
+    <div class="grid grid--two">
+      {tag.items.map((post) => (
+        <PostCard post={post} />
+      ))}
+    </div>
+  </section>
+</SiteLayout>

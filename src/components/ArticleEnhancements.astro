@@ -1,0 +1,109 @@
+<script is:inline>
+  (() => {
+    const article = document.querySelector(".prose[data-article-prose]");
+    if (!article) return;
+
+    const imageParagraphs = Array.from(article.querySelectorAll("p")).filter((node) => {
+      if (node.children.length !== 1) return false;
+      return node.firstElementChild?.tagName === "IMG";
+    });
+
+    imageParagraphs.forEach((paragraph) => {
+      const image = paragraph.querySelector("img");
+      if (!image || paragraph.parentElement?.classList.contains("prose-figure")) return;
+
+      const figure = document.createElement("figure");
+      figure.className = "prose-figure";
+      image.loading = "lazy";
+
+      const captionText = image.getAttribute("title") || image.getAttribute("alt") || "";
+      paragraph.replaceWith(figure);
+      figure.appendChild(image);
+
+      if (captionText) {
+        const caption = document.createElement("figcaption");
+        caption.textContent = captionText;
+        figure.appendChild(caption);
+      }
+    });
+
+    const figures = Array.from(article.querySelectorAll(".prose-figure"));
+    let group = [];
+
+    const flushGroup = () => {
+      if (group.length <= 1) {
+        group = [];
+        return;
+      }
+
+      const gallery = document.createElement("div");
+      gallery.className = "prose-gallery";
+      gallery.dataset.gallerySize = String(Math.min(group.length, 4));
+      group[0].before(gallery);
+      group.forEach((item) => gallery.appendChild(item));
+      group = [];
+    };
+
+    figures.forEach((figure, index) => {
+      const previous = figures[index - 1];
+      if (!previous) {
+        group.push(figure);
+        return;
+      }
+
+      const isAdjacent = previous.nextElementSibling === figure;
+      if (isAdjacent) {
+        group.push(figure);
+      } else {
+        flushGroup();
+        group.push(figure);
+      }
+    });
+    flushGroup();
+
+    const lightbox = document.createElement("div");
+    lightbox.className = "image-lightbox";
+    lightbox.setAttribute("hidden", "");
+    lightbox.innerHTML = `
+      <button class="image-lightbox__close" type="button" aria-label="关闭图片查看">×</button>
+      <div class="image-lightbox__inner">
+        <img class="image-lightbox__image" alt="" />
+        <p class="image-lightbox__caption"></p>
+      </div>
+    `;
+    document.body.appendChild(lightbox);
+
+    const lightboxImage = lightbox.querySelector(".image-lightbox__image");
+    const lightboxCaption = lightbox.querySelector(".image-lightbox__caption");
+    const closeButton = lightbox.querySelector(".image-lightbox__close");
+
+    const closeLightbox = () => {
+      lightbox.setAttribute("hidden", "");
+      document.body.classList.remove("has-lightbox");
+    };
+
+    closeButton?.addEventListener("click", closeLightbox);
+    lightbox.addEventListener("click", (event) => {
+      if (event.target === lightbox) {
+        closeLightbox();
+      }
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !lightbox.hasAttribute("hidden")) {
+        closeLightbox();
+      }
+    });
+
+    article.querySelectorAll(".prose-figure img").forEach((image) => {
+      image.classList.add("is-lightboxable");
+      image.addEventListener("click", () => {
+        lightboxImage.src = image.currentSrc || image.src;
+        lightboxImage.alt = image.alt || "";
+        lightboxCaption.textContent = image.getAttribute("title") || image.getAttribute("alt") || "";
+        lightbox.removeAttribute("hidden");
+        document.body.classList.add("has-lightbox");
+      });
+    });
+  })();
+</script>

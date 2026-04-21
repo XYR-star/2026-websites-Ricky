@@ -1,5 +1,7 @@
 ---
 import SiteLayout from "./SiteLayout.astro";
+import StoryLinkCard from "../components/StoryLinkCard.astro";
+import ArticleEnhancements from "../components/ArticleEnhancements.astro";
 import { formatDate } from "../lib/content";
 
 interface Props {
@@ -9,6 +11,22 @@ interface Props {
   tags?: string[];
   cover?: string;
   eyebrow?: string;
+  previous?: {
+    href: string;
+    title: string;
+    description: string;
+  } | null;
+  next?: {
+    href: string;
+    title: string;
+    description: string;
+  } | null;
+  related?: Array<{
+    href: string;
+    title: string;
+    description: string;
+    meta?: string;
+  }>;
 }
 
 const {
@@ -18,6 +36,9 @@ const {
   tags = [],
   cover,
   eyebrow = "Essay",
+  previous = null,
+  next = null,
+  related = [],
 } = Astro.props;
 ---
 
@@ -38,7 +59,64 @@ const {
       <img class="article-cover" src={cover} alt={title} />
     </section>
   )}
-  <article class="prose">
+  <article class="prose" data-article-prose>
     <slot />
   </article>
+  {(previous || next) && (
+    <section class="shell section article-continuation">
+      <div class="section__head">
+        <div>
+          <div class="section-label">Continue Reading</div>
+          <h2>继续阅读</h2>
+        </div>
+      </div>
+      <div class="grid grid--two">
+        {previous ? (
+          <StoryLinkCard
+            href={previous.href}
+            title={previous.title}
+            description={previous.description}
+            meta="上一篇"
+          />
+        ) : (
+          <div class="entry entry--compact entry--ghost">
+            <p>已经到这一条时间线的最新位置。</p>
+          </div>
+        )}
+        {next ? (
+          <StoryLinkCard
+            href={next.href}
+            title={next.title}
+            description={next.description}
+            meta="下一篇"
+          />
+        ) : (
+          <div class="entry entry--compact entry--ghost">
+            <p>这里已经是这一条时间线的最早一篇。</p>
+          </div>
+        )}
+      </div>
+    </section>
+  )}
+  {related.length > 0 && (
+    <section class="shell section article-related">
+      <div class="section__head">
+        <div>
+          <div class="section-label">Related</div>
+          <h2>相关推荐</h2>
+        </div>
+      </div>
+      <div class="stack">
+        {related.map((item) => (
+          <StoryLinkCard
+            href={item.href}
+            title={item.title}
+            description={item.description}
+            meta={item.meta}
+          />
+        ))}
+      </div>
+    </section>
+  )}
+  <ArticleEnhancements />
 </SiteLayout>

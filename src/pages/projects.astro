@@ -1,0 +1,26 @@
+---
+import SiteLayout from "../layouts/SiteLayout.astro";
+import { projects } from "../data/projects";
+---
+
+<SiteLayout title="Projects · Ricky" description="长期项目、研究主题与写作方向">
+  <section class="shell page-hero">
+    <div class="eyebrow">Long-running Threads</div>
+    <h1>Projects</h1>
+    <p>比单篇文章更稳定的，是那些会持续反复回到的主题、项目和工作线索。</p>
+  </section>
+
+  <section class="shell section">
+    <div class="stack">
+      {projects.map((project) => (
+        <article class="entry">
+          <div class="meta-row">
+            <span class="tag">{project.status}</span>
+          </div>
+          <h2 class="entry__title">{project.title}</h2>
+          <p>{project.description}</p>
+        </article>
+      ))}
+    </div>
+  </section>
+</SiteLayout>

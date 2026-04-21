@@ -1,0 +1,23 @@
+---
+import SiteLayout from "../layouts/SiteLayout.astro";
+import { nowPage } from "../data/now";
+---
+
+<SiteLayout title="Now · Ricky" description="最近在推进什么、关注什么、停留在什么问题上">
+  <section class="shell page-hero">
+    <div class="eyebrow">{nowPage.eyebrow}</div>
+    <h1>{nowPage.title}</h1>
+    <p>{nowPage.intro}</p>
+  </section>
+
+  <section class="shell section">
+    <div class="stack">
+      {nowPage.items.map((item, index) => (
+        <article class="entry">
+          <div class="section-label">Update {index + 1}</div>
+          <p>{item}</p>
+        </article>
+      ))}
+    </div>
+  </section>
+</SiteLayout>

@@ -1,0 +1,18 @@
+---
+interface Props {
+  href: string;
+  title: string;
+  description: string;
+  meta?: string;
+}
+
+const { href, title, description, meta = "" } = Astro.props;
+---
+
+<article class="entry entry--compact">
+  {meta && <div class="meta-row"><span>{meta}</span></div>}
+  <h3 class="entry__title">
+    <a href={href}>{title}</a>
+  </h3>
+  <p>{description}</p>
+</article>

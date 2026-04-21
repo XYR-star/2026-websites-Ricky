@@ -1,7 +1,11 @@
 ---
 import { getCollection, render } from "astro:content";
 import PostLayout from "../../layouts/PostLayout.astro";
-import { getVisibleResearchEntries } from "../../lib/content";
+import {
+  getContentNeighbors,
+  getRelatedResearch,
+  getVisibleResearchEntries,
+} from "../../lib/content";
 
 export async function getStaticPaths() {
   const items = getVisibleResearchEntries(await getCollection("research"));
@@ -15,6 +19,14 @@ export async function getStaticPaths() {
 const { item } = Astro.props;
 const { Content } = await render(item);
 const researchTags = [item.data.project, item.data.status].filter(Boolean) as string[];
+const items = getVisibleResearchEntries(await getCollection("research"));
+const { previous, next } = getContentNeighbors(items, item.slug);
+const related = getRelatedResearch(items, item).map((entry) => ({
+  href: `/research/${entry.slug}`,
+  title: entry.data.title,
+  description: entry.data.summary,
+  meta: entry.data.project ?? entry.data.status ?? "Research",
+}));
 ---
 
 <PostLayout
@@ -23,6 +35,17 @@ const researchTags = [item.data.project, item.data.status].filter(Boolean) as st
   date={item.data.date}
   tags={researchTags}
   eyebrow="Research"
+  previous={previous && {
+    href: `/research/${previous.slug}`,
+    title: previous.data.title,
+    description: previous.data.summary,
+  }}
+  next={next && {
+    href: `/research/${next.slug}`,
+    title: next.data.title,
+    description: next.data.summary,
+  }}
+  related={related}
 >
   <Content />
 </PostLayout>

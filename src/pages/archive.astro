@@ -1,0 +1,75 @@
+---
+import { getCollection } from "astro:content";
+import SiteLayout from "../layouts/SiteLayout.astro";
+import {
+  formatDate,
+  getArchiveEntries,
+  getVisiblePosts,
+  getVisibleResearchEntries,
+  getVisibleTravelPosts,
+  groupArchiveEntriesByMonth,
+} from "../lib/content";
+
+const blog = getVisiblePosts(await getCollection("blog"));
+const research = getVisibleResearchEntries(await getCollection("research"));
+const travel = getVisibleTravelPosts(await getCollection("travel"));
+const groups = groupArchiveEntriesByMonth(
+  getArchiveEntries({ blog, research, travel }),
+);
+
+const typeLabelMap = {
+  blog: "Blog",
+  research: "Research",
+  travel: "Travel",
+};
+---
+
+<SiteLayout title="归档 · Ricky" description="按时间浏览博客、科研进展与游记">
+  <section class="shell page-hero">
+    <div class="eyebrow">Archive Calendar</div>
+    <h1>归档</h1>
+    <p>按时间重新找到博客、科研进展和游记，让内容的生长轨迹更容易被看见。</p>
+  </section>
+
+  <section class="shell section archive-grid">
+    <aside class="note-panel archive-calendar">
+      <div class="section-label">月份导航</div>
+      <div class="archive-calendar__grid">
+        {groups.map((group) => (
+          <a href={`#${group.key}`} class="archive-calendar__link">
+            <span>{group.label}</span>
+            <span>{group.count}</span>
+          </a>
+        ))}
+      </div>
+    </aside>
+
+    <div class="stack">
+      {groups.map((group) => (
+        <section class="card archive-month" id={group.key}>
+          <div class="section__head">
+            <div>
+              <div class="section-label">Month Archive</div>
+              <h2>{group.label}</h2>
+            </div>
+            <span class="pill">{group.count} 条记录</span>
+          </div>
+          <div class="stack">
+            {group.items.map((item) => (
+              <article class="archive-item">
+                <div class="meta-row">
+                  <span>{formatDate(item.date)}</span>
+                  <span class="tag">{typeLabelMap[item.type]}</span>
+                </div>
+                <h3 class="entry__title">
+                  <a href={item.href}>{item.title}</a>
+                </h3>
+                <p>{item.description}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  </section>
+</SiteLayout>

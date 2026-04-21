@@ -15,6 +15,13 @@ const items = sortByDateDesc(await getCollection("research"));
   </section>
 
   <section class="shell section">
+    <div class="section__head">
+      <div></div>
+      <div class="meta-row">
+        <a class="section__link" href="/archive">按时间归档</a>
+        <a class="section__link" href="/search">搜索</a>
+      </div>
+    </div>
     <div class="stack">
       {items.map((item) => (
         <ResearchCard item={item} />

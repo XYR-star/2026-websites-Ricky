@@ -1,0 +1,26 @@
+---
+import { getCollection } from "astro:content";
+import SiteLayout from "../../layouts/SiteLayout.astro";
+import { getBlogTags, getVisiblePosts } from "../../lib/content";
+
+const tags = getBlogTags(getVisiblePosts(await getCollection("blog")));
+---
+
+<SiteLayout title="标签 · Ricky" description="按博客标签浏览文章">
+  <section class="shell page-hero">
+    <div class="eyebrow">Tag Index</div>
+    <h1>标签</h1>
+    <p>从主题而不是时间切入，快速找到围绕同一问题展开的博客文章。</p>
+  </section>
+
+  <section class="shell section">
+    <div class="tag-cloud">
+      {tags.map((tag) => (
+        <a class="pill pill--link" href={`/tags/${tag.slug}`}>
+          <span>{tag.tag}</span>
+          <span>{tag.count}</span>
+        </a>
+      ))}
+    </div>
+  </section>
+</SiteLayout>

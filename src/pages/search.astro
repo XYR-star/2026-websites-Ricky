@@ -1,0 +1,108 @@
+---
+import { getCollection } from "astro:content";
+import SiteLayout from "../layouts/SiteLayout.astro";
+import {
+  getArchiveEntries,
+  getSearchIndex,
+  getVisiblePosts,
+  getVisibleResearchEntries,
+  getVisibleTravelPosts,
+} from "../lib/content";
+
+const blog = getVisiblePosts(await getCollection("blog"));
+const research = getVisibleResearchEntries(await getCollection("research"));
+const travel = getVisibleTravelPosts(await getCollection("travel"));
+const searchIndex = getSearchIndex(getArchiveEntries({ blog, research, travel }));
+const typeLabelMap = {
+  blog: "Blog",
+  research: "Research",
+  travel: "Travel",
+};
+---
+
+<SiteLayout title="搜索 · Ricky" description="搜索博客、科研进展与游记">
+  <section class="shell page-hero">
+    <div class="eyebrow">Search</div>
+    <h1>搜索</h1>
+    <p>按关键词查找文章、研究记录和旅途笔记。搜索会同时匹配标题、摘要、标签与正文。</p>
+  </section>
+
+  <section class="shell section">
+    <div class="card search-panel">
+      <label class="section-label" for="site-search-input">关键词</label>
+      <input
+        id="site-search-input"
+        class="search-input"
+        type="search"
+        placeholder="例如：git / 实验 / 重庆 / 系统"
+        autocomplete="off"
+      />
+      <p class="markdown-help" id="search-summary">输入关键词后，这里会显示匹配结果。</p>
+    </div>
+
+    <div class="stack search-results" id="search-results">
+      <div class="note-panel">
+        <p>可以先试试搜索标题、标签、研究项目名，或者最近写过的一段话。</p>
+      </div>
+    </div>
+  </section>
+
+  <script is:inline define:vars={{ searchIndex, typeLabelMap }}>
+    (() => {
+      const input = document.getElementById("site-search-input");
+      const host = document.getElementById("search-results");
+      const summary = document.getElementById("search-summary");
+      if (!input || !host || !summary) return;
+
+      const normalize = (value) => String(value || "").trim().toLowerCase();
+
+      const renderEmpty = (message) => {
+        host.innerHTML = `<div class="note-panel"><p>${message}</p></div>`;
+      };
+
+      const renderResults = (query) => {
+        const value = normalize(query);
+        if (!value) {
+          summary.textContent = "输入关键词后，这里会显示匹配结果。";
+          renderEmpty("可以先试试搜索标题、标签、研究项目名，或者最近写过的一段话。");
+          return;
+        }
+
+        const tokens = value.split(/\s+/).filter(Boolean);
+        const matches = searchIndex
+          .map((item) => {
+            const haystack = normalize(`${item.title} ${item.description} ${item.tags.join(" ")} ${item.text}`);
+            const score = tokens.reduce((total, token) => total + (haystack.includes(token) ? 1 : 0), 0);
+            return { item, score };
+          })
+          .filter((entry) => entry.score > 0)
+          .sort((a, b) => b.score - a.score || new Date(b.item.date).getTime() - new Date(a.item.date).getTime())
+          .slice(0, 24);
+
+        summary.textContent = matches.length > 0 ? `找到 ${matches.length} 条结果。` : "没有找到匹配结果。";
+
+        if (matches.length === 0) {
+          renderEmpty("这次没有命中内容。你可以换一个关键词，或去归档页按时间浏览。");
+          return;
+        }
+
+        host.innerHTML = matches
+          .map(({ item }) => `
+            <article class="entry">
+              <div class="meta-row">
+                <span>${new Intl.DateTimeFormat("zh-CN", { year: "numeric", month: "short", day: "numeric" }).format(new Date(item.date))}</span>
+                <span class="tag">${typeLabelMap[item.type]}</span>
+              </div>
+              <h3 class="entry__title"><a href="${item.href}">${item.title}</a></h3>
+              <p>${item.description}</p>
+            </article>
+          `)
+          .join("");
+      };
+
+      input.addEventListener("input", (event) => {
+        renderResults(event.target.value);
+      });
+    })();
+  </script>
+</SiteLayout>
