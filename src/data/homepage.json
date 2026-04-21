@@ -7,28 +7,10 @@
   },
   "sections": [
     {
-      "id": "editorial-note",
-      "type": "quote",
-      "enabled": true,
-      "order": 10,
-      "eyebrow": "Editorial Note",
-      "quote": "这个网站不是项目陈列柜，而是一份持续展开的个人工作样本。"
-    },
-    {
-      "id": "about-here",
-      "type": "aboutNote",
-      "enabled": true,
-      "order": 20,
-      "eyebrow": "关于这里",
-      "body": "关注机器学习、智能系统与创造性工具，也在意写作、界面、旅行经验和知识如何被更好地组织。",
-      "linkLabel": "查看更多",
-      "linkHref": "/about"
-    },
-    {
       "id": "recent-blog",
       "type": "featuredPosts",
       "enabled": true,
-      "order": 30,
+      "order": 10,
       "eyebrow": "Selected Essays",
       "title": "最近博客",
       "linkLabel": "查看全部文章",
@@ -39,7 +21,7 @@
       "id": "travel-notes",
       "type": "travelList",
       "enabled": true,
-      "order": 40,
+      "order": 20,
       "eyebrow": "Travel Notes",
       "title": "游记",
       "linkLabel": "查看游记",
@@ -50,7 +32,7 @@
       "id": "research-log",
       "type": "researchList",
       "enabled": true,
-      "order": 50,
+      "order": 30,
       "eyebrow": "Research Log",
       "title": "科研进展",
       "linkLabel": "进入研究日志",
