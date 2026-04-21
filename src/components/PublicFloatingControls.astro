@@ -1,0 +1,115 @@
+---
+const labels = {
+  theme: "切换黑暗模式",
+  top: "回到顶部",
+};
+---
+
+<aside class="floating-rail" aria-label="页面快捷操作" data-public-floating-controls>
+  <button class="floating-rail__button" type="button" data-theme-toggle aria-label={labels.theme} title={labels.theme}>
+    <span class="floating-rail__icon" data-theme-icon>◐</span>
+  </button>
+  <button class="floating-rail__button" type="button" data-scroll-top aria-label={labels.top} title={labels.top}>
+    <span class="floating-rail__icon">↑</span>
+  </button>
+  <nav class="floating-rail__track" aria-label="首页板块定位" data-section-rail hidden>
+    <div class="floating-rail__line" aria-hidden="true"></div>
+    <div class="floating-rail__marks" data-section-marks></div>
+  </nav>
+</aside>
+
+<script is:inline>
+  (() => {
+    const themeKey = "ricky-theme";
+    const root = document.documentElement;
+    const themeButton = document.querySelector("[data-theme-toggle]");
+    const themeIcon = document.querySelector("[data-theme-icon]");
+    const topButton = document.querySelector("[data-scroll-top]");
+    const rail = document.querySelector("[data-section-rail]");
+    const marksHost = document.querySelector("[data-section-marks]");
+    const sections = Array.from(document.querySelectorAll("[data-home-section]"));
+
+    function currentTheme() {
+      return root.dataset.theme === "dark" ? "dark" : "light";
+    }
+
+    function syncThemeButton() {
+      const dark = currentTheme() === "dark";
+      if (themeIcon) {
+        themeIcon.textContent = dark ? "☀" : "☾";
+      }
+      if (themeButton) {
+        const label = dark ? "切换到浅色模式" : "切换到黑暗模式";
+        themeButton.setAttribute("aria-label", label);
+        themeButton.setAttribute("title", label);
+      }
+    }
+
+    function setTheme(theme) {
+      root.dataset.theme = theme;
+      root.style.colorScheme = theme;
+      localStorage.setItem(themeKey, theme);
+      syncThemeButton();
+    }
+
+    syncThemeButton();
+
+    themeButton?.addEventListener("click", () => {
+      setTheme(currentTheme() === "dark" ? "light" : "dark");
+    });
+
+    topButton?.addEventListener("click", () => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
+    if (!rail || !marksHost || sections.length === 0 || window.location.pathname !== "/") {
+      rail?.setAttribute("hidden", "");
+      return;
+    }
+
+    rail.removeAttribute("hidden");
+
+    const marks = sections.map((section) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "floating-rail__mark";
+      button.dataset.sectionTarget = section.id;
+      button.setAttribute("aria-label", `跳转到${section.dataset.sectionLabel || section.id}`);
+      button.title = section.dataset.sectionLabel || section.id;
+      button.innerHTML = `
+        <span class="floating-rail__mark-dot" aria-hidden="true"></span>
+        <span class="floating-rail__label">${section.dataset.sectionLabel || section.id}</span>
+      `;
+      button.addEventListener("click", () => {
+        section.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+      marksHost.appendChild(button);
+      return button;
+    });
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+
+        if (!visible?.target?.id) {
+          return;
+        }
+
+        marks.forEach((button) => {
+          button.classList.toggle(
+            "is-active",
+            button.dataset.sectionTarget === visible.target.id,
+          );
+        });
+      },
+      {
+        rootMargin: "-20% 0px -50% 0px",
+        threshold: [0.2, 0.4, 0.7],
+      },
+    );
+
+    sections.forEach((section) => observer.observe(section));
+  })();
+</script>

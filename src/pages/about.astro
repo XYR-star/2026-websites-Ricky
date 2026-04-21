@@ -1,52 +1,79 @@
 ---
 import SiteLayout from "../layouts/SiteLayout.astro";
-import { siteMeta } from "../data/site";
+import aboutData from "../data/about.json";
+
+type AboutContent = {
+  hero: {
+    eyebrow: string;
+    title: string;
+    intro: string;
+  };
+  profileCard: {
+    sectionLabel: string;
+    title: string;
+    body: string;
+    secondaryBody?: string;
+  };
+  facts: {
+    sectionLabel: string;
+    locationLabel: string;
+    location?: string;
+    emailLabel: string;
+    email?: string;
+    topicsLabel: string;
+    topics?: string;
+  };
+  links: Array<{
+    label: string;
+    href: string;
+  }>;
+};
+
+const about = aboutData as AboutContent;
 ---
 
 <SiteLayout title="关于我 · Ricky" description="关于站点作者、研究方向与联系方式">
   <section class="shell page-hero">
-    <div class="eyebrow">About</div>
-    <h1>关于我</h1>
-    <p>
-      我希望这个网站既能承载持续输出的文章，也能保存研究推进时最有价值的中间状态。
-    </p>
+    <div class="eyebrow">{about.hero.eyebrow}</div>
+    <h1>{about.hero.title}</h1>
+    <p>{about.hero.intro}</p>
   </section>
 
   <section class="shell section">
     <div class="about-grid">
       <div class="card">
-        <div class="section-label">简介</div>
-        <h2 class="card__title">研究、写作与系统化表达</h2>
-        <p>{siteMeta.about}</p>
-        <p>
-          第一版网站会优先保持轻量和稳定，让发布流程足够顺手，再逐步扩展到项目页、双语支持或更细的归档体系。
-        </p>
+        <div class="section-label">{about.profileCard.sectionLabel}</div>
+        <h2 class="card__title">{about.profileCard.title}</h2>
+        <p>{about.profileCard.body}</p>
+        {about.profileCard.secondaryBody && <p>{about.profileCard.secondaryBody}</p>}
       </div>
       <aside class="note-panel">
-        <div class="section-label">Quick Facts</div>
+        <div class="section-label">{about.facts.sectionLabel}</div>
         <div class="about-list">
-          {siteMeta.location && (
+          {about.facts.location && (
             <div>
-              <strong>地点</strong>
-              <p>{siteMeta.location}</p>
+              <strong>{about.facts.locationLabel}</strong>
+              <p>{about.facts.location}</p>
             </div>
           )}
-          {siteMeta.email && (
+          {about.facts.email && (
             <div>
-              <strong>联系</strong>
-              <p>{siteMeta.email}</p>
+              <strong>{about.facts.emailLabel}</strong>
+              <p>{about.facts.email}</p>
             </div>
           )}
-          <div>
-            <strong>关注主题</strong>
-            <p>机器学习、智能系统、创造性工具、知识表达</p>
-          </div>
+          {about.facts.topics && (
+            <div>
+              <strong>{about.facts.topicsLabel}</strong>
+              <p>{about.facts.topics}</p>
+            </div>
+          )}
         </div>
       </aside>
     </div>
   </section>
 
-  {siteMeta.socialLinks.length > 0 && (
+  {about.links.length > 0 && (
     <section class="shell section">
       <div class="section__head">
         <div>
@@ -55,7 +82,7 @@ import { siteMeta } from "../data/site";
         </div>
       </div>
       <div class="grid grid--three">
-        {siteMeta.socialLinks.map((link) => (
+        {about.links.map((link) => (
           <a class="card" href={link.href} target="_blank" rel="noreferrer">
             <div class="section-label">{link.label}</div>
             <h3 class="card__title">{link.href.replace(/^mailto:/, "")}</h3>

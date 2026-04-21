@@ -1,0 +1,23 @@
+{
+  "hero": {
+    "eyebrow": "About",
+    "title": "关于我",
+    "intro": "我希望这个网站既能承载持续输出的文章，也能保存研究推进时最有价值的中间状态。"
+  },
+  "profileCard": {
+    "sectionLabel": "简介",
+    "title": "研究、写作与系统化表达",
+    "body": "关注机器学习、智能系统与创造性工具，也在意写作、界面、旅行经验和知识如何被更好地组织。",
+    "secondaryBody": "第一版网站会优先保持轻量和稳定，让发布流程足够顺手，再逐步扩展到项目页、双语支持或更细的归档体系。"
+  },
+  "facts": {
+    "sectionLabel": "Quick Facts",
+    "locationLabel": "地点",
+    "location": "",
+    "emailLabel": "联系",
+    "email": "",
+    "topicsLabel": "关注主题",
+    "topics": "机器学习、智能系统、创造性工具、知识表达"
+  },
+  "links": []
+}

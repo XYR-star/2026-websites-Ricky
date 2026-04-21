@@ -1,6 +1,5 @@
 ---
 import { getCollection } from "astro:content";
-import HomeFloatingRail from "../components/HomeFloatingRail.astro";
 import PostCard from "../components/PostCard.astro";
 import ResearchCard from "../components/ResearchCard.astro";
 import TravelCard from "../components/TravelCard.astro";
@@ -57,16 +56,6 @@ for (let index = 0; index < orderedSections.length; index += 1) {
   });
 }
 
-const railItems = [
-  {
-    id: homepage.hero.id,
-    label: "开场",
-  },
-  ...orderedSections.map((section) => ({
-    id: section.id,
-    label: getHomepageSectionLabel(section),
-  })),
-];
 ---
 
 <SiteLayout title="Ricky · 写作与科研记录" description={siteMeta.description}>
@@ -223,6 +212,4 @@ const railItems = [
       </section>
     );
   })}
-
-  <HomeFloatingRail items={railItems} />
 </SiteLayout>
