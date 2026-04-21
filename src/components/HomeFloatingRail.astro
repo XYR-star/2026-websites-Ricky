@@ -1,0 +1,116 @@
+---
+interface RailItem {
+  id: string;
+  label: string;
+}
+
+interface Props {
+  items: RailItem[];
+}
+
+const { items } = Astro.props;
+---
+
+<aside class="floating-rail" aria-label="首页快捷操作">
+  <button class="floating-rail__button" type="button" data-theme-toggle aria-label="切换黑暗模式">
+    <span class="floating-rail__icon" data-theme-icon>◐</span>
+  </button>
+  <button class="floating-rail__button" type="button" data-scroll-top aria-label="回到顶部">
+    <span class="floating-rail__icon">↑</span>
+  </button>
+  <nav class="floating-rail__track" aria-label="首页板块定位">
+    {items.map((item, index) => (
+      <button
+        class="floating-rail__dot"
+        type="button"
+        data-section-target={item.id}
+        aria-label={`跳转到${item.label}`}
+        title={item.label}
+      >
+        <span>{index + 1}</span>
+      </button>
+    ))}
+  </nav>
+</aside>
+
+<script is:inline define:vars={{ items }}>
+  (() => {
+    const themeKey = "ricky-theme";
+    const root = document.documentElement;
+    const themeButton = document.querySelector("[data-theme-toggle]");
+    const themeIcon = document.querySelector("[data-theme-icon]");
+    const topButton = document.querySelector("[data-scroll-top]");
+    const dotButtons = Array.from(document.querySelectorAll("[data-section-target]"));
+    const sectionIds = items.map((item) => item.id);
+    const sections = sectionIds
+      .map((id) => document.getElementById(id))
+      .filter(Boolean);
+
+    function currentTheme() {
+      return root.dataset.theme === "dark" ? "dark" : "light";
+    }
+
+    function syncThemeButton() {
+      const dark = currentTheme() === "dark";
+      if (themeIcon) {
+        themeIcon.textContent = dark ? "☀" : "☾";
+      }
+      if (themeButton) {
+        themeButton.setAttribute("aria-label", dark ? "切换到浅色模式" : "切换到黑暗模式");
+        themeButton.setAttribute("title", dark ? "切换到浅色模式" : "切换到黑暗模式");
+      }
+    }
+
+    function setTheme(theme) {
+      root.dataset.theme = theme;
+      root.style.colorScheme = theme;
+      localStorage.setItem(themeKey, theme);
+      syncThemeButton();
+    }
+
+    syncThemeButton();
+
+    themeButton?.addEventListener("click", () => {
+      setTheme(currentTheme() === "dark" ? "light" : "dark");
+    });
+
+    topButton?.addEventListener("click", () => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
+    dotButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const id = button.getAttribute("data-section-target");
+        const target = id ? document.getElementById(id) : null;
+        target?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
+
+    if (sections.length > 0) {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          const visible = entries
+            .filter((entry) => entry.isIntersecting)
+            .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+
+          if (!visible?.target?.id) {
+            return;
+          }
+
+          dotButtons.forEach((button) => {
+            button.classList.toggle(
+              "is-active",
+              button.getAttribute("data-section-target") === visible.target.id,
+            );
+          });
+        },
+        {
+          rootMargin: "-25% 0px -45% 0px",
+          threshold: [0.2, 0.45, 0.7],
+        },
+      );
+
+      sections.forEach((section) => observer.observe(section));
+    }
+  })();
+</script>

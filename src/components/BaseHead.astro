@@ -12,10 +12,29 @@ const {
 } = Astro.props;
 
 const canonical = new URL(Astro.url.pathname, Astro.site ?? siteMeta.siteUrl);
+const themeInitScript = String.raw`
+  (() => {
+    try {
+      const root = document.documentElement;
+      const saved = localStorage.getItem("ricky-theme");
+      const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const theme = saved === "dark" || saved === "light"
+        ? saved
+        : (systemDark ? "dark" : "light");
+
+      root.dataset.theme = theme;
+      root.style.colorScheme = theme;
+    } catch (_error) {
+      document.documentElement.dataset.theme = "light";
+      document.documentElement.style.colorScheme = "light";
+    }
+  })();
+`;
 ---
 
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<script is:inline set:html={themeInitScript}></script>
 <title>{title}</title>
 <meta name="description" content={description} />
 <meta name="generator" content={Astro.generator} />

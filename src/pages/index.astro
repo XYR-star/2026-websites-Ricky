@@ -1,102 +1,228 @@
 ---
 import { getCollection } from "astro:content";
+import HomeFloatingRail from "../components/HomeFloatingRail.astro";
 import PostCard from "../components/PostCard.astro";
 import ResearchCard from "../components/ResearchCard.astro";
 import TravelCard from "../components/TravelCard.astro";
 import SiteLayout from "../layouts/SiteLayout.astro";
+import homepageData from "../data/homepage.json";
 import { siteMeta } from "../data/site";
+import {
+  getHomepageSectionLabel,
+  getOrderedHomepageSections,
+  type HomepageAboutNoteSection,
+  type HomepageContent,
+  type HomepageQuoteSection,
+  type HomepageSection,
+} from "../lib/homepage";
 import { getVisiblePosts, getVisibleTravelPosts, sortByDateDesc } from "../lib/content";
 
-const posts = getVisiblePosts(await getCollection("blog")).slice(0, 3);
-const research = sortByDateDesc(await getCollection("research")).slice(0, 3);
-const travel = getVisibleTravelPosts(await getCollection("travel")).slice(0, 3);
+const homepage = homepageData as HomepageContent;
+const posts = getVisiblePosts(await getCollection("blog"));
+const research = sortByDateDesc(await getCollection("research"));
+const travel = getVisibleTravelPosts(await getCollection("travel"));
+
+const orderedSections = getOrderedHomepageSections(homepage.sections);
+
+type RenderGroup =
+  | {
+      kind: "featureBand";
+      quote: HomepageQuoteSection;
+      about: HomepageAboutNoteSection;
+    }
+  | {
+      kind: "single";
+      section: HomepageSection;
+    };
+
+const renderGroups: RenderGroup[] = [];
+
+for (let index = 0; index < orderedSections.length; index += 1) {
+  const current = orderedSections[index];
+  const next = orderedSections[index + 1];
+
+  if (current.type === "quote" && next?.type === "aboutNote") {
+    renderGroups.push({
+      kind: "featureBand",
+      quote: current,
+      about: next,
+    });
+    index += 1;
+    continue;
+  }
+
+  renderGroups.push({
+    kind: "single",
+    section: current,
+  });
+}
+
+const railItems = [
+  {
+    id: homepage.hero.id,
+    label: "开场",
+  },
+  ...orderedSections.map((section) => ({
+    id: section.id,
+    label: getHomepageSectionLabel(section),
+  })),
+];
 ---
 
 <SiteLayout title="Ricky · 写作与科研记录" description={siteMeta.description}>
-  <section class="shell hero">
-    <div>
-      <div class="eyebrow">Independent Notes</div>
-      <h1>写作、研究与仍在形成中的想法。</h1>
-      <p>{siteMeta.intro}</p>
-      <div class="hero__meta">
-        <span class="pill">中文内容优先</span>
-        <span class="pill">博客 / 科研进展 / 游记</span>
-        <span class="pill">持续更新中</span>
-      </div>
-    </div>
-    <aside class="hero__panel">
-      <div class="section-label">Site Focus</div>
-      <dl>
-        <dt>写作</dt>
-        <dd>把零散观察变成可反复阅读的文章。</dd>
-        <dt>研究</dt>
-        <dd>记录每个阶段的推演、试验与判断。</dd>
-        <dt>游记</dt>
-        <dd>把行走中的观察、风景和片刻感受慢慢写下来。</dd>
-        <dt>工作方式</dt>
-        <dd>简洁发布，长期维护，避免形式先于内容。</dd>
-      </dl>
-    </aside>
-  </section>
-
-  <section class="shell section">
-    <div class="feature-band">
-      <div class="quote-block">
-        <div class="section-label">Editorial Note</div>
-        <blockquote>
-          这个网站不是项目陈列柜，而是一份持续展开的个人工作样本。
-        </blockquote>
-      </div>
-      <div class="note-panel">
-        <div class="section-label">关于这里</div>
-        <p>{siteMeta.about}</p>
-        <a class="section__link" href="/about">查看更多</a>
-      </div>
+  <section class="shell hero" id={homepage.hero.id} data-home-section data-section-label="开场">
+    <div class="hero__content">
+      <div class="eyebrow">{homepage.hero.eyebrow}</div>
+      <h1>{homepage.hero.title}</h1>
+      <p>{homepage.hero.intro}</p>
     </div>
   </section>
 
-  <section class="shell section">
-    <div class="section__head">
-      <div>
-        <div class="eyebrow">Selected Essays</div>
-        <h2>最近博客</h2>
-      </div>
-      <a class="section__link" href="/blog">查看全部文章</a>
-    </div>
-    <div class="grid grid--three">
-      {posts.map((post) => (
-        <PostCard post={post} />
-      ))}
-    </div>
-  </section>
+  {renderGroups.map((group) => {
+    if (group.kind === "featureBand") {
+      return (
+        <section class="shell section" id={group.quote.id} data-home-section data-section-label={getHomepageSectionLabel(group.quote)}>
+          <div class="feature-band">
+            <div class="quote-block">
+              {group.quote.eyebrow && <div class="section-label">{group.quote.eyebrow}</div>}
+              <blockquote>{group.quote.quote}</blockquote>
+            </div>
+            <div class="note-panel" id={group.about.id}>
+              {group.about.eyebrow && <div class="section-label">{group.about.eyebrow}</div>}
+              <p>{group.about.body}</p>
+              {group.about.linkLabel && group.about.linkHref && (
+                <a class="section__link" href={group.about.linkHref}>
+                  {group.about.linkLabel}
+                </a>
+              )}
+            </div>
+          </div>
+        </section>
+      );
+    }
 
-  <section class="shell section">
-    <div class="section__head">
-      <div>
-        <div class="eyebrow">Travel Notes</div>
-        <h2>游记</h2>
-      </div>
-      <a class="section__link" href="/travel">查看游记</a>
-    </div>
-    <div class="grid grid--three">
-      {travel.map((post) => (
-        <TravelCard post={post} />
-      ))}
-    </div>
-  </section>
+    const section = group.section;
 
-  <section class="shell section">
-    <div class="section__head">
-      <div>
-        <div class="eyebrow">Research Log</div>
-        <h2>科研进展</h2>
-      </div>
-      <a class="section__link" href="/research">进入研究日志</a>
-    </div>
-    <div class="stack">
-      {research.map((item) => (
-        <ResearchCard item={item} />
-      ))}
-    </div>
-  </section>
+    if (section.type === "featuredPosts") {
+      return (
+        <section class="shell section" id={section.id} data-home-section data-section-label={getHomepageSectionLabel(section)}>
+          <div class="section__head">
+            <div>
+              {section.eyebrow && <div class="eyebrow">{section.eyebrow}</div>}
+              {section.title && <h2>{section.title}</h2>}
+            </div>
+            {section.linkLabel && section.linkHref && (
+              <a class="section__link" href={section.linkHref}>
+                {section.linkLabel}
+              </a>
+            )}
+          </div>
+          <div class="grid grid--three">
+            {posts.slice(0, section.count ?? 3).map((post) => (
+              <PostCard post={post} />
+            ))}
+          </div>
+        </section>
+      );
+    }
+
+    if (section.type === "travelList") {
+      return (
+        <section class="shell section" id={section.id} data-home-section data-section-label={getHomepageSectionLabel(section)}>
+          <div class="section__head">
+            <div>
+              {section.eyebrow && <div class="eyebrow">{section.eyebrow}</div>}
+              {section.title && <h2>{section.title}</h2>}
+            </div>
+            {section.linkLabel && section.linkHref && (
+              <a class="section__link" href={section.linkHref}>
+                {section.linkLabel}
+              </a>
+            )}
+          </div>
+          <div class="grid grid--three">
+            {travel.slice(0, section.count ?? 3).map((post) => (
+              <TravelCard post={post} />
+            ))}
+          </div>
+        </section>
+      );
+    }
+
+    if (section.type === "researchList") {
+      return (
+        <section class="shell section" id={section.id} data-home-section data-section-label={getHomepageSectionLabel(section)}>
+          <div class="section__head">
+            <div>
+              {section.eyebrow && <div class="eyebrow">{section.eyebrow}</div>}
+              {section.title && <h2>{section.title}</h2>}
+            </div>
+            {section.linkLabel && section.linkHref && (
+              <a class="section__link" href={section.linkHref}>
+                {section.linkLabel}
+              </a>
+            )}
+          </div>
+          <div class="stack">
+            {research.slice(0, section.count ?? 3).map((item) => (
+              <ResearchCard item={item} />
+            ))}
+          </div>
+        </section>
+      );
+    }
+
+    if (section.type === "aboutNote") {
+      return (
+        <section class="shell section" id={section.id} data-home-section data-section-label={getHomepageSectionLabel(section)}>
+          <div class="note-panel homepage-panel">
+            {section.eyebrow && <div class="section-label">{section.eyebrow}</div>}
+            {section.title && <h2 class="homepage-panel__title">{section.title}</h2>}
+            <p>{section.body}</p>
+            {section.linkLabel && section.linkHref && (
+              <a class="section__link" href={section.linkHref}>
+                {section.linkLabel}
+              </a>
+            )}
+          </div>
+        </section>
+      );
+    }
+
+    if (section.type === "quote") {
+      return (
+        <section class="shell section" id={section.id} data-home-section data-section-label={getHomepageSectionLabel(section)}>
+          <div class="quote-block homepage-panel">
+            {section.eyebrow && <div class="section-label">{section.eyebrow}</div>}
+            <blockquote>{section.quote}</blockquote>
+          </div>
+        </section>
+      );
+    }
+
+    return (
+      <section class="shell section" id={section.id} data-home-section data-section-label={getHomepageSectionLabel(section)}>
+        <div class="note-panel homepage-panel">
+          {(section.eyebrow || section.title) && (
+            <div>
+              {section.eyebrow && <div class="section-label">{section.eyebrow}</div>}
+              {section.title && <h2 class="homepage-panel__title">{section.title}</h2>}
+            </div>
+          )}
+          {"body" in section &&
+            section.body
+              .split(/\n{2,}/)
+              .filter(Boolean)
+              .map((paragraph) => <p>{paragraph}</p>)}
+          {section.linkLabel && section.linkHref && (
+            <a class="section__link" href={section.linkHref}>
+              {section.linkLabel}
+            </a>
+          )}
+        </div>
+      </section>
+    );
+  })}
+
+  <HomeFloatingRail items={railItems} />
 </SiteLayout>
