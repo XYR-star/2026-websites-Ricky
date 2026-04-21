@@ -192,8 +192,10 @@ cover: "/images/travel/example/cover.jpg"
 - 登录页：`/admin/login`
 - 后台入口：`/admin`
 - 支持：首页文案与预设板块配置
+- 支持：关于我页面的完整配置编辑
 - 支持：博客、科研进展、游记的 Markdown 编辑
 - 支持：将内容移入回收区删除
+- 支持：回收站查看、恢复与存档
 - 支持：上传图片到 `public/images/...`
 - 支持：保存内容并一键构建发布
 
