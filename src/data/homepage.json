@@ -1,43 +1,98 @@
 {
   "hero": {
     "id": "home-hero",
-    "eyebrow": "Independent Notes",
-    "title": "写作、研究与仍在形成中的想法。",
-    "intro": "我在这里写博客、整理研究线索，也记录那些在路上发生、值得被重新讲述的片刻。"
+    "eyebrow": "Ricky's Notes",
+    "title": "我把研究推进、写作尝试和路上的观察，都慢慢放在这里。",
+    "intro": "",
+    "primaryLinkLabel": "第一次来先看这里",
+    "primaryLinkHref": "#start-here",
+    "secondaryLinkLabel": "看看我最近在做什么",
+    "secondaryLinkHref": "#now-glimpse"
   },
   "sections": [
+    {
+      "id": "start-here",
+      "type": "curatedLinks",
+      "enabled": true,
+      "order": 10,
+      "eyebrow": "Start Here",
+      "title": "第一次来，可以先从这里开始",
+      "body": "这几篇内容最能帮助你快速理解这个网站的脉络：我怎么写、我在研究什么、以及我如何把生活里的片段也纳入同一套观察里。",
+      "items": [
+        {
+          "eyebrow": "工作流",
+          "title": "把 Git 用顺：一份面向服务器工作流的入门指南",
+          "description": "一篇比较典型的写作样本：不只是给结论，也尽量把判断过程和上下文讲清楚。",
+          "href": "/blog/2026-04-20-git-guide-for-server-workflows"
+        },
+        {
+          "eyebrow": "部署笔记",
+          "title": "把 FreshRSS 接入现有网站：一份更稳的部署笔记",
+          "description": "如果你想快速感受我如何整理技术问题，这篇会比较直接地展示我的表达方式。",
+          "href": "/blog/2026-04-20-freshrss-deployment-notes"
+        },
+        {
+          "eyebrow": "路上",
+          "title": "四月西大120周年校庆记",
+          "description": "这一篇能看到另一面：我不只记录任务，也记录那些会反过来影响思考方式的现场。",
+          "href": "/travel/2026-04-21-120-swu"
+        }
+      ]
+    },
+    {
+      "id": "now-glimpse",
+      "type": "nowSummary",
+      "enabled": true,
+      "order": 20,
+      "eyebrow": "Now",
+      "title": "最近在做什么",
+      "linkLabel": "查看完整近况",
+      "linkHref": "/now",
+      "body": "最近我在继续把这个网站打磨成更顺手的长期写作工具，也在整理研究进展，希望每一次阶段性判断都能留下更清楚的上下文。\n\n同时也在慢慢整理旅行里的图像和笔记，让那些原本会散掉的片段，最后也能变成完整的记录。"
+    },
     {
       "id": "recent-blog",
       "type": "featuredPosts",
       "enabled": true,
-      "order": 10,
-      "eyebrow": "Selected Essays",
-      "title": "最近博客",
+      "order": 30,
+      "eyebrow": "Writing",
+      "title": "最近写下的东西",
       "linkLabel": "查看全部文章",
       "linkHref": "/blog",
-      "count": 3
-    },
-    {
-      "id": "travel-notes",
-      "type": "travelList",
-      "enabled": true,
-      "order": 20,
-      "eyebrow": "Travel Notes",
-      "title": "游记",
-      "linkLabel": "查看游记",
-      "linkHref": "/travel",
       "count": 3
     },
     {
       "id": "research-log",
       "type": "researchList",
       "enabled": true,
-      "order": 30,
-      "eyebrow": "Research Log",
-      "title": "科研进展",
+      "order": 40,
+      "eyebrow": "Research In Progress",
+      "title": "正在推进的研究",
       "linkLabel": "进入研究日志",
       "linkHref": "/research",
       "count": 3
+    },
+    {
+      "id": "travel-notes",
+      "type": "travelList",
+      "enabled": true,
+      "order": 50,
+      "eyebrow": "On The Road",
+      "title": "路上的记录",
+      "linkLabel": "查看游记",
+      "linkHref": "/travel",
+      "count": 3
+    },
+    {
+      "id": "home-note",
+      "type": "aboutNote",
+      "enabled": true,
+      "order": 60,
+      "eyebrow": "About This Site",
+      "title": "这个网站为什么会长成现在这样",
+      "linkLabel": "更多关于我",
+      "linkHref": "/about",
+      "body": "我希望这里不是一个只在发布时才更新的作品集，而是一个能长期承载写作、研究和生活观察的地方。\n\n博客、科研和游记看起来像三条线，但它们其实都在回答同一个问题：一个人是怎样慢慢形成自己的判断与表达的。"
     }
   ]
 }

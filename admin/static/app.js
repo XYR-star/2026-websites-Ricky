@@ -77,24 +77,64 @@ function defaultHomepageSection(type, order) {
     };
   }
 
+  if (type === "curatedLinks") {
+    return {
+      ...base,
+      eyebrow: "Start Here",
+      title: "第一次来，可以先看这里",
+      body: "如果你是第一次来到这个网站，这几篇内容能更快帮助你理解我在关心什么、这里为什么值得继续逛下去。",
+      items: [
+        {
+          eyebrow: "写作",
+          title: "先放一篇代表性文章",
+          description: "用一篇最能代表你表达方式的文章，带读者进入你的语境。",
+          href: "/blog",
+        },
+        {
+          eyebrow: "研究",
+          title: "再看一条研究线索",
+          description: "补充你正在如何思考问题，而不只是展示结果。",
+          href: "/research",
+        },
+        {
+          eyebrow: "路上",
+          title: "最后看一篇游记",
+          description: "让人看到你的观察方式，不只存在于书桌前。",
+          href: "/travel",
+        },
+      ],
+    };
+  }
+
+  if (type === "nowSummary") {
+    return {
+      ...base,
+      eyebrow: "Now",
+      title: "最近在做什么",
+      body: "这里放一段比正式文章更轻的近况摘要，让首页保持一点正在发生的生命感。",
+      linkLabel: "查看完整近况",
+      linkHref: "/now",
+    };
+  }
+
   const presets = {
     featuredPosts: {
-      eyebrow: "Selected Essays",
-      title: "最近博客",
+      eyebrow: "Writing",
+      title: "最近写下的东西",
       linkLabel: "查看全部文章",
       linkHref: "/blog",
       count: 3,
     },
     travelList: {
-      eyebrow: "Travel Notes",
-      title: "游记",
+      eyebrow: "On The Road",
+      title: "路上的记录",
       linkLabel: "查看游记",
       linkHref: "/travel",
       count: 3,
     },
     researchList: {
-      eyebrow: "Research Log",
-      title: "科研进展",
+      eyebrow: "Research In Progress",
+      title: "正在推进的研究",
       linkLabel: "进入研究日志",
       linkHref: "/research",
       count: 3,
@@ -698,6 +738,8 @@ function renderHomepageSectionFields(section) {
     featuredPosts: "博客列表",
     travelList: "游记列表",
     researchList: "科研列表",
+    curatedLinks: "精选入口",
+    nowSummary: "Now 摘要",
     aboutNote: "说明卡片",
     quote: "引用块",
     richText: "自由文字",
@@ -762,6 +804,57 @@ function renderHomepageSectionFields(section) {
     `;
   }
 
+  if (section.type === "curatedLinks") {
+    return `
+      ${common}
+      <div class="field-group">
+        <label>标题</label>
+        <input data-homepage-field="title" value="${escapeHtml(section.title ?? "")}" />
+      </div>
+      <div class="field-group">
+        <label>引导说明</label>
+        <textarea data-homepage-field="body">${escapeHtml(section.body ?? "")}</textarea>
+      </div>
+      <div class="admin-grid">
+        ${(section.items ?? [])
+          .map(
+            (item, index) => `
+              <div class="admin-card homepage-section-card" data-curated-item>
+                <div class="admin-actions admin-actions--spread">
+                  <div>
+                    <div class="admin-kicker">入口 ${index + 1}</div>
+                    <h4 class="admin-subtitle">${escapeHtml(item.title || "未命名入口")}</h4>
+                  </div>
+                  <button type="button" class="link-button button-danger" data-remove-curated-item="${index}">删除入口</button>
+                </div>
+                <div class="admin-grid two">
+                  <div class="field-group">
+                    <label>分类眉题</label>
+                    <input data-curated-field="eyebrow" value="${escapeHtml(item.eyebrow ?? "")}" />
+                  </div>
+                  <div class="field-group">
+                    <label>标题</label>
+                    <input data-curated-field="title" value="${escapeHtml(item.title ?? "")}" />
+                  </div>
+                </div>
+                <div class="field-group">
+                  <label>描述</label>
+                  <textarea data-curated-field="description">${escapeHtml(item.description ?? "")}</textarea>
+                </div>
+                <div class="field-group">
+                  <label>链接地址</label>
+                  <input data-curated-field="href" value="${escapeHtml(item.href ?? "")}" />
+                </div>
+              </div>`,
+          )
+          .join("")}
+      </div>
+      <div class="admin-actions">
+        <button type="button" class="link-button button-secondary" data-add-curated-item>新增精选入口</button>
+      </div>
+    `;
+  }
+
   return `
     ${common}
     <div class="field-group">
@@ -794,6 +887,11 @@ function syncHomepageStateFromDom() {
     eyebrow: form.querySelector('[data-homepage-hero="eyebrow"]').value.trim(),
     title: form.querySelector('[data-homepage-hero="title"]').value.trim(),
     intro: form.querySelector('[data-homepage-hero="intro"]').value.trim(),
+    note: form.querySelector('[data-homepage-hero="note"]')?.value.trim() ?? "",
+    primaryLinkLabel: form.querySelector('[data-homepage-hero="primaryLinkLabel"]')?.value.trim() ?? "",
+    primaryLinkHref: form.querySelector('[data-homepage-hero="primaryLinkHref"]')?.value.trim() ?? "",
+    secondaryLinkLabel: form.querySelector('[data-homepage-hero="secondaryLinkLabel"]')?.value.trim() ?? "",
+    secondaryLinkHref: form.querySelector('[data-homepage-hero="secondaryLinkHref"]')?.value.trim() ?? "",
   };
 
   homepageState.sections = Array.from(form.querySelectorAll("[data-homepage-section]")).map((card, index) => {
@@ -813,11 +911,21 @@ function syncHomepageStateFromDom() {
       section.count = Number(card.querySelector('[data-homepage-field="count"]').value || 3);
     }
 
+    if (type === "curatedLinks") {
+      section.body = card.querySelector('[data-homepage-field="body"]').value.trim();
+      section.items = Array.from(card.querySelectorAll("[data-curated-item]")).map((itemCard) => ({
+        eyebrow: itemCard.querySelector('[data-curated-field="eyebrow"]').value.trim(),
+        title: itemCard.querySelector('[data-curated-field="title"]').value.trim(),
+        description: itemCard.querySelector('[data-curated-field="description"]').value.trim(),
+        href: itemCard.querySelector('[data-curated-field="href"]').value.trim(),
+      }));
+    }
+
     if (type === "quote") {
       section.quote = card.querySelector('[data-homepage-field="quote"]').value.trim();
     }
 
-    if (["aboutNote", "richText"].includes(type)) {
+    if (["aboutNote", "richText", "nowSummary"].includes(type)) {
       section.body = card.querySelector('[data-homepage-field="body"]').value.trim();
     }
 
@@ -850,6 +958,30 @@ function renderHomepageEditor(messageHtml = "") {
           <div class="field-group">
             <label>简介</label>
             <textarea data-homepage-hero="intro">${escapeHtml(homepageState.hero.intro)}</textarea>
+          </div>
+          <div class="field-group">
+            <label>补充说明</label>
+            <textarea data-homepage-hero="note">${escapeHtml(homepageState.hero.note ?? "")}</textarea>
+          </div>
+          <div class="admin-grid two">
+            <div class="field-group">
+              <label>主链接文案</label>
+              <input data-homepage-hero="primaryLinkLabel" value="${escapeHtml(homepageState.hero.primaryLinkLabel ?? "")}" />
+            </div>
+            <div class="field-group">
+              <label>主链接地址</label>
+              <input data-homepage-hero="primaryLinkHref" value="${escapeHtml(homepageState.hero.primaryLinkHref ?? "")}" />
+            </div>
+          </div>
+          <div class="admin-grid two">
+            <div class="field-group">
+              <label>次链接文案</label>
+              <input data-homepage-hero="secondaryLinkLabel" value="${escapeHtml(homepageState.hero.secondaryLinkLabel ?? "")}" />
+            </div>
+            <div class="field-group">
+              <label>次链接地址</label>
+              <input data-homepage-hero="secondaryLinkHref" value="${escapeHtml(homepageState.hero.secondaryLinkHref ?? "")}" />
+            </div>
           </div>
         </div>
 
@@ -915,6 +1047,39 @@ function renderHomepageEditor(messageHtml = "") {
       const type = button.getAttribute("data-add-section");
       homepageState.sections.push(defaultHomepageSection(type, (homepageState.sections.length + 1) * 10));
       renderHomepageEditor(renderMessage("已新增一个预设板块，记得保存。", "success"));
+    });
+  });
+
+  form.querySelectorAll("[data-add-curated-item]").forEach((button) => {
+    button.addEventListener("click", () => {
+      syncHomepageStateFromDom();
+      const sectionCard = button.closest("[data-homepage-section]");
+      const index = Array.from(form.querySelectorAll("[data-homepage-section]")).indexOf(sectionCard);
+      if (index < 0) return;
+      const section = homepageState.sections[index];
+      if (!section || section.type !== "curatedLinks") return;
+      section.items = section.items ?? [];
+      section.items.push({
+        eyebrow: "",
+        title: "新的精选入口",
+        description: "写一句告诉第一次访问者，为什么应该点开它。",
+        href: "/blog",
+      });
+      renderHomepageEditor(renderMessage("已新增一个精选入口，记得保存。", "success"));
+    });
+  });
+
+  form.querySelectorAll("[data-remove-curated-item]").forEach((button) => {
+    button.addEventListener("click", () => {
+      syncHomepageStateFromDom();
+      const itemIndex = Number(button.getAttribute("data-remove-curated-item"));
+      const sectionCard = button.closest("[data-homepage-section]");
+      const index = Array.from(form.querySelectorAll("[data-homepage-section]")).indexOf(sectionCard);
+      if (index < 0) return;
+      const section = homepageState.sections[index];
+      if (!section || section.type !== "curatedLinks") return;
+      section.items.splice(itemIndex, 1);
+      renderHomepageEditor(renderMessage("已移除一个精选入口，记得保存。", "success"));
     });
   });
 

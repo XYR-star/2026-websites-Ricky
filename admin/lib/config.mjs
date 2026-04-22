@@ -44,6 +44,8 @@ export const homepageSectionTypes = [
   "featuredPosts",
   "travelList",
   "researchList",
+  "curatedLinks",
+  "nowSummary",
   "aboutNote",
   "quote",
   "richText",

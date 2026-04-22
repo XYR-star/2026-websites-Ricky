@@ -9,13 +9,26 @@ function normalizeLink(value) {
   return isNonEmptyString(value) ? value.trim() : "";
 }
 
+function normalizeCuratedItems(items) {
+  if (!Array.isArray(items)) {
+    return [];
+  }
+
+  return items.slice(0, 6).map((item) => ({
+    ...(isNonEmptyString(item?.eyebrow) ? { eyebrow: item.eyebrow.trim() } : {}),
+    title: String(item?.title ?? "").trim(),
+    description: String(item?.description ?? "").trim(),
+    href: normalizeLink(item?.href),
+  }));
+}
+
 function validateHero(hero) {
   if (!hero || typeof hero !== "object") {
     throw new Error("Homepage hero is required.");
   }
 
-  if (!isNonEmptyString(hero.id) || !isNonEmptyString(hero.title) || !isNonEmptyString(hero.intro)) {
-    throw new Error("Homepage hero must include id, title, and intro.");
+  if (!isNonEmptyString(hero.id)) {
+    throw new Error("Homepage hero must include id.");
   }
 }
 
@@ -47,12 +60,10 @@ function validateSection(section, index) {
     }
   }
 
-  if (section.type === "quote" && !isNonEmptyString(section.quote)) {
-    throw new Error(`Homepage section "${section.id}" must include quote text.`);
-  }
-
-  if (["aboutNote", "richText"].includes(section.type) && !isNonEmptyString(section.body)) {
-    throw new Error(`Homepage section "${section.id}" must include body text.`);
+  if (section.type === "curatedLinks") {
+    if (!Array.isArray(section.items) || section.items.length > 6) {
+      throw new Error(`Homepage section "${section.id}" can include up to 6 curated links.`);
+    }
   }
 }
 
@@ -72,12 +83,17 @@ function normalizeSection(section) {
     normalized.count = Number(section.count ?? 3);
   }
 
-  if (section.type === "quote") {
-    normalized.quote = section.quote.trim();
+  if (section.type === "curatedLinks") {
+    normalized.body = isNonEmptyString(section.body) ? section.body.trim() : "";
+    normalized.items = normalizeCuratedItems(section.items);
   }
 
-  if (["aboutNote", "richText"].includes(section.type)) {
-    normalized.body = section.body.trim();
+  if (section.type === "quote") {
+    normalized.quote = String(section.quote ?? "").trim();
+  }
+
+  if (["aboutNote", "richText", "nowSummary"].includes(section.type)) {
+    normalized.body = String(section.body ?? "").trim();
   }
 
   return normalized;
@@ -85,7 +101,30 @@ function normalizeSection(section) {
 
 export function getHomepageConfig() {
   const raw = fs.readFileSync(homepageConfigPath, "utf8");
-  return JSON.parse(raw);
+  const parsed = JSON.parse(raw);
+
+  return {
+    hero: {
+      id: String(parsed?.hero?.id ?? "").trim(),
+      eyebrow: String(parsed?.hero?.eyebrow ?? "").trim(),
+      title: String(parsed?.hero?.title ?? "").trim(),
+      intro: String(parsed?.hero?.intro ?? "").trim(),
+      ...(isNonEmptyString(parsed?.hero?.note) ? { note: parsed.hero.note.trim() } : {}),
+      ...(isNonEmptyString(parsed?.hero?.primaryLinkLabel)
+        ? { primaryLinkLabel: parsed.hero.primaryLinkLabel.trim() }
+        : {}),
+      ...(isNonEmptyString(parsed?.hero?.primaryLinkHref)
+        ? { primaryLinkHref: normalizeLink(parsed.hero.primaryLinkHref) }
+        : {}),
+      ...(isNonEmptyString(parsed?.hero?.secondaryLinkLabel)
+        ? { secondaryLinkLabel: parsed.hero.secondaryLinkLabel.trim() }
+        : {}),
+      ...(isNonEmptyString(parsed?.hero?.secondaryLinkHref)
+        ? { secondaryLinkHref: normalizeLink(parsed.hero.secondaryLinkHref) }
+        : {}),
+    },
+    sections: Array.isArray(parsed?.sections) ? parsed.sections.map(normalizeSection) : [],
+  };
 }
 
 export function updateHomepageConfig(payload) {
@@ -109,8 +148,21 @@ export function updateHomepageConfig(payload) {
     hero: {
       id: payload.hero.id.trim(),
       eyebrow: String(payload.hero.eyebrow ?? "").trim(),
-      title: payload.hero.title.trim(),
-      intro: payload.hero.intro.trim(),
+      title: String(payload.hero.title ?? "").trim(),
+      intro: String(payload.hero.intro ?? "").trim(),
+      ...(isNonEmptyString(payload.hero.note) ? { note: payload.hero.note.trim() } : {}),
+      ...(isNonEmptyString(payload.hero.primaryLinkLabel)
+        ? { primaryLinkLabel: payload.hero.primaryLinkLabel.trim() }
+        : {}),
+      ...(isNonEmptyString(payload.hero.primaryLinkHref)
+        ? { primaryLinkHref: normalizeLink(payload.hero.primaryLinkHref) }
+        : {}),
+      ...(isNonEmptyString(payload.hero.secondaryLinkLabel)
+        ? { secondaryLinkLabel: payload.hero.secondaryLinkLabel.trim() }
+        : {}),
+      ...(isNonEmptyString(payload.hero.secondaryLinkHref)
+        ? { secondaryLinkHref: normalizeLink(payload.hero.secondaryLinkHref) }
+        : {}),
     },
     sections: payload.sections.map(normalizeSection),
   };

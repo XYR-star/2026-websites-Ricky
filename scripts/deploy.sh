@@ -22,4 +22,9 @@ cp -r "$DIST_DIR"/. "$TARGET_DIR"/
 echo "==> Reloading nginx"
 systemctl reload nginx
 
+if [[ "${SKIP_ADMIN_RESTART:-0}" != "1" ]]; then
+  echo "==> Restarting admin service"
+  systemctl restart ricky-admin.service
+fi
+
 echo "==> Deploy complete"

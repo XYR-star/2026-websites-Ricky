@@ -2,6 +2,8 @@ export const homepageSectionTypes = [
   "featuredPosts",
   "travelList",
   "researchList",
+  "curatedLinks",
+  "nowSummary",
   "aboutNote",
   "quote",
   "richText",
@@ -14,6 +16,18 @@ export type HomepageHero = {
   eyebrow: string;
   title: string;
   intro: string;
+  note?: string;
+  primaryLinkLabel?: string;
+  primaryLinkHref?: string;
+  secondaryLinkLabel?: string;
+  secondaryLinkHref?: string;
+};
+
+export type HomepageCuratedLinkItem = {
+  eyebrow?: string;
+  title: string;
+  description: string;
+  href: string;
 };
 
 export type HomepageSectionBase = {
@@ -37,6 +51,17 @@ export type HomepageQuoteSection = HomepageSectionBase & {
   quote: string;
 };
 
+export type HomepageCuratedLinksSection = HomepageSectionBase & {
+  type: "curatedLinks";
+  body?: string;
+  items: HomepageCuratedLinkItem[];
+};
+
+export type HomepageNowSummarySection = HomepageSectionBase & {
+  type: "nowSummary";
+  body: string;
+};
+
 export type HomepageAboutNoteSection = HomepageSectionBase & {
   type: "aboutNote";
   body: string;
@@ -50,6 +75,8 @@ export type HomepageRichTextSection = HomepageSectionBase & {
 export type HomepageSection =
   | HomepageListSection
   | HomepageQuoteSection
+  | HomepageCuratedLinksSection
+  | HomepageNowSummarySection
   | HomepageAboutNoteSection
   | HomepageRichTextSection;
 
@@ -66,4 +93,15 @@ export function getOrderedHomepageSections(sections: HomepageSection[]) {
 
 export function getHomepageSectionLabel(section: HomepageSection) {
   return section.title || section.eyebrow || section.id;
+}
+
+export function splitHomepageBody(body?: string) {
+  if (!body) {
+    return [];
+  }
+
+  return body
+    .split(/\n{2,}/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean);
 }

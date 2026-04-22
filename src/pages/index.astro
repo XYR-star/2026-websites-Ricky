@@ -9,6 +9,7 @@ import { siteMeta } from "../data/site";
 import {
   getHomepageSectionLabel,
   getOrderedHomepageSections,
+  splitHomepageBody,
   type HomepageAboutNoteSection,
   type HomepageContent,
   type HomepageQuoteSection,
@@ -20,6 +21,7 @@ const homepage = homepageData as HomepageContent;
 const posts = getVisiblePosts(await getCollection("blog"));
 const research = sortByDateDesc(await getCollection("research"));
 const travel = getVisibleTravelPosts(await getCollection("travel"));
+const blankLine = "\u00A0";
 
 const orderedSections = getOrderedHomepageSections(homepage.sections);
 
@@ -61,9 +63,25 @@ for (let index = 0; index < orderedSections.length; index += 1) {
 <SiteLayout title="Ricky · 写作与科研记录" description={siteMeta.description}>
   <section class="shell hero" id={homepage.hero.id} data-home-section data-section-label="开场">
     <div class="hero__content">
-      <div class="eyebrow">{homepage.hero.eyebrow}</div>
-      <h1>{homepage.hero.title}</h1>
-      <p>{homepage.hero.intro}</p>
+      <div class:list={["eyebrow", { "copy-slot": !homepage.hero.eyebrow }]}>{homepage.hero.eyebrow || blankLine}</div>
+      <h1 class:list={{ "copy-slot": !homepage.hero.title }}>{homepage.hero.title || blankLine}</h1>
+      <p class:list={{ "copy-slot": !homepage.hero.intro }}>{homepage.hero.intro || blankLine}</p>
+      <p class:list={["hero__note", { "copy-slot": !homepage.hero.note }]}>{homepage.hero.note || blankLine}</p>
+      {(homepage.hero.primaryLinkLabel && homepage.hero.primaryLinkHref) ||
+      (homepage.hero.secondaryLinkLabel && homepage.hero.secondaryLinkHref) ? (
+        <div class="hero__actions">
+          {homepage.hero.primaryLinkLabel && homepage.hero.primaryLinkHref && (
+            <a class="hero__action hero__action--primary" href={homepage.hero.primaryLinkHref}>
+              {homepage.hero.primaryLinkLabel}
+            </a>
+          )}
+          {homepage.hero.secondaryLinkLabel && homepage.hero.secondaryLinkHref && (
+            <a class="hero__action" href={homepage.hero.secondaryLinkHref}>
+              {homepage.hero.secondaryLinkLabel}
+            </a>
+          )}
+        </div>
+      ) : null}
     </div>
   </section>
 
@@ -73,12 +91,12 @@ for (let index = 0; index < orderedSections.length; index += 1) {
         <section class="shell section" id={group.quote.id} data-home-section data-section-label={getHomepageSectionLabel(group.quote)}>
           <div class="feature-band">
             <div class="quote-block">
-              {group.quote.eyebrow && <div class="section-label">{group.quote.eyebrow}</div>}
-              <blockquote>{group.quote.quote}</blockquote>
+              <div class:list={["section-label", { "copy-slot": !group.quote.eyebrow }]}>{group.quote.eyebrow || blankLine}</div>
+              <blockquote class:list={{ "copy-slot": !group.quote.quote }}>{group.quote.quote || blankLine}</blockquote>
             </div>
             <div class="note-panel" id={group.about.id}>
-              {group.about.eyebrow && <div class="section-label">{group.about.eyebrow}</div>}
-              <p>{group.about.body}</p>
+              <div class:list={["section-label", { "copy-slot": !group.about.eyebrow }]}>{group.about.eyebrow || blankLine}</div>
+              <p class:list={{ "copy-slot": !group.about.body }}>{group.about.body || blankLine}</p>
               {group.about.linkLabel && group.about.linkHref && (
                 <a class="section__link" href={group.about.linkHref}>
                   {group.about.linkLabel}
@@ -97,8 +115,8 @@ for (let index = 0; index < orderedSections.length; index += 1) {
         <section class="shell section" id={section.id} data-home-section data-section-label={getHomepageSectionLabel(section)}>
           <div class="section__head">
             <div>
-              {section.eyebrow && <div class="eyebrow">{section.eyebrow}</div>}
-              {section.title && <h2>{section.title}</h2>}
+              <div class:list={["eyebrow", { "copy-slot": !section.eyebrow }]}>{section.eyebrow || blankLine}</div>
+              <h2 class:list={{ "copy-slot": !section.title }}>{section.title || blankLine}</h2>
             </div>
             {section.linkLabel && section.linkHref && (
               <a class="section__link" href={section.linkHref}>
@@ -120,8 +138,8 @@ for (let index = 0; index < orderedSections.length; index += 1) {
         <section class="shell section" id={section.id} data-home-section data-section-label={getHomepageSectionLabel(section)}>
           <div class="section__head">
             <div>
-              {section.eyebrow && <div class="eyebrow">{section.eyebrow}</div>}
-              {section.title && <h2>{section.title}</h2>}
+              <div class:list={["eyebrow", { "copy-slot": !section.eyebrow }]}>{section.eyebrow || blankLine}</div>
+              <h2 class:list={{ "copy-slot": !section.title }}>{section.title || blankLine}</h2>
             </div>
             {section.linkLabel && section.linkHref && (
               <a class="section__link" href={section.linkHref}>
@@ -143,8 +161,8 @@ for (let index = 0; index < orderedSections.length; index += 1) {
         <section class="shell section" id={section.id} data-home-section data-section-label={getHomepageSectionLabel(section)}>
           <div class="section__head">
             <div>
-              {section.eyebrow && <div class="eyebrow">{section.eyebrow}</div>}
-              {section.title && <h2>{section.title}</h2>}
+              <div class:list={["eyebrow", { "copy-slot": !section.eyebrow }]}>{section.eyebrow || blankLine}</div>
+              <h2 class:list={{ "copy-slot": !section.title }}>{section.title || blankLine}</h2>
             </div>
             {section.linkLabel && section.linkHref && (
               <a class="section__link" href={section.linkHref}>
@@ -161,13 +179,74 @@ for (let index = 0; index < orderedSections.length; index += 1) {
       );
     }
 
+    if (section.type === "curatedLinks") {
+      return (
+        <section class="shell section" id={section.id} data-home-section data-section-label={getHomepageSectionLabel(section)}>
+          <div class="section__head">
+            <div>
+              <div class:list={["eyebrow", { "copy-slot": !section.eyebrow }]}>{section.eyebrow || blankLine}</div>
+              <h2 class:list={{ "copy-slot": !section.title }}>{section.title || blankLine}</h2>
+            </div>
+          </div>
+          <div class="curated-panel">
+            {splitHomepageBody(section.body).length > 0 ? (
+              splitHomepageBody(section.body).map((paragraph) => <p class="curated-panel__intro">{paragraph}</p>)
+            ) : (
+              <p class="curated-panel__intro copy-slot">{blankLine}</p>
+            )}
+            <div class="grid grid--three">
+              {section.items.map((item) =>
+                item.href ? (
+                  <a class="card curated-card fade-in" href={item.href}>
+                    <div class:list={["section-label", { "copy-slot": !item.eyebrow }]}>{item.eyebrow || blankLine}</div>
+                    <h3 class:list={["card__title", { "copy-slot": !item.title }]}>{item.title || blankLine}</h3>
+                    <p class:list={{ "copy-slot": !item.description }}>{item.description || blankLine}</p>
+                    <span class="section__link">从这里开始</span>
+                  </a>
+                ) : (
+                  <div class="card curated-card fade-in">
+                    <div class:list={["section-label", { "copy-slot": !item.eyebrow }]}>{item.eyebrow || blankLine}</div>
+                    <h3 class:list={["card__title", { "copy-slot": !item.title }]}>{item.title || blankLine}</h3>
+                    <p class:list={{ "copy-slot": !item.description }}>{item.description || blankLine}</p>
+                  </div>
+                ),
+              )}
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    if (section.type === "nowSummary") {
+      return (
+        <section class="shell section" id={section.id} data-home-section data-section-label={getHomepageSectionLabel(section)}>
+          <div class="now-panel homepage-panel">
+            <div class:list={["section-label", { "copy-slot": !section.eyebrow }]}>{section.eyebrow || blankLine}</div>
+            <h2 class:list={["homepage-panel__title", { "copy-slot": !section.title }]}>{section.title || blankLine}</h2>
+            <div class="stack now-panel__body">
+              {splitHomepageBody(section.body).length > 0 ? (
+                splitHomepageBody(section.body).map((paragraph) => <p>{paragraph}</p>)
+              ) : (
+                <p class="copy-slot">{blankLine}</p>
+              )}
+            </div>
+            {section.linkLabel && section.linkHref && (
+              <a class="section__link" href={section.linkHref}>
+                {section.linkLabel}
+              </a>
+            )}
+          </div>
+        </section>
+      );
+    }
+
     if (section.type === "aboutNote") {
       return (
         <section class="shell section" id={section.id} data-home-section data-section-label={getHomepageSectionLabel(section)}>
           <div class="note-panel homepage-panel">
-            {section.eyebrow && <div class="section-label">{section.eyebrow}</div>}
-            {section.title && <h2 class="homepage-panel__title">{section.title}</h2>}
-            <p>{section.body}</p>
+            <div class:list={["section-label", { "copy-slot": !section.eyebrow }]}>{section.eyebrow || blankLine}</div>
+            <h2 class:list={["homepage-panel__title", { "copy-slot": !section.title }]}>{section.title || blankLine}</h2>
+            <p class:list={{ "copy-slot": !section.body }}>{section.body || blankLine}</p>
             {section.linkLabel && section.linkHref && (
               <a class="section__link" href={section.linkHref}>
                 {section.linkLabel}
@@ -182,8 +261,8 @@ for (let index = 0; index < orderedSections.length; index += 1) {
       return (
         <section class="shell section" id={section.id} data-home-section data-section-label={getHomepageSectionLabel(section)}>
           <div class="quote-block homepage-panel">
-            {section.eyebrow && <div class="section-label">{section.eyebrow}</div>}
-            <blockquote>{section.quote}</blockquote>
+            <div class:list={["section-label", { "copy-slot": !section.eyebrow }]}>{section.eyebrow || blankLine}</div>
+            <blockquote class:list={{ "copy-slot": !section.quote }}>{section.quote || blankLine}</blockquote>
           </div>
         </section>
       );
@@ -192,17 +271,16 @@ for (let index = 0; index < orderedSections.length; index += 1) {
     return (
       <section class="shell section" id={section.id} data-home-section data-section-label={getHomepageSectionLabel(section)}>
         <div class="note-panel homepage-panel">
-          {(section.eyebrow || section.title) && (
-            <div>
-              {section.eyebrow && <div class="section-label">{section.eyebrow}</div>}
-              {section.title && <h2 class="homepage-panel__title">{section.title}</h2>}
-            </div>
-          )}
+          <div>
+            <div class:list={["section-label", { "copy-slot": !section.eyebrow }]}>{section.eyebrow || blankLine}</div>
+            <h2 class:list={["homepage-panel__title", { "copy-slot": !section.title }]}>{section.title || blankLine}</h2>
+          </div>
           {"body" in section &&
-            section.body
-              .split(/\n{2,}/)
-              .filter(Boolean)
-              .map((paragraph) => <p>{paragraph}</p>)}
+            (splitHomepageBody(section.body).length > 0 ? (
+              splitHomepageBody(section.body).map((paragraph) => <p>{paragraph}</p>)
+            ) : (
+              <p class="copy-slot">{blankLine}</p>
+            ))}
           {section.linkLabel && section.linkHref && (
             <a class="section__link" href={section.linkHref}>
               {section.linkLabel}

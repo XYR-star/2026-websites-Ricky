@@ -30,44 +30,39 @@ type AboutContent = {
 };
 
 const about = aboutData as AboutContent;
+const blankLine = "\u00A0";
 ---
 
 <SiteLayout title="关于我 · Ricky" description="关于站点作者、研究方向与联系方式">
   <section class="shell page-hero">
-    <div class="eyebrow">{about.hero.eyebrow}</div>
-    <h1>{about.hero.title}</h1>
-    <p>{about.hero.intro}</p>
+    <div class:list={["eyebrow", { "copy-slot": !about.hero.eyebrow }]}>{about.hero.eyebrow || blankLine}</div>
+    <h1 class:list={{ "copy-slot": !about.hero.title }}>{about.hero.title || blankLine}</h1>
+    <p class:list={{ "copy-slot": !about.hero.intro }}>{about.hero.intro || blankLine}</p>
   </section>
 
   <section class="shell section">
     <div class="about-grid">
       <div class="card">
-        <div class="section-label">{about.profileCard.sectionLabel}</div>
-        <h2 class="card__title">{about.profileCard.title}</h2>
-        <p>{about.profileCard.body}</p>
-        {about.profileCard.secondaryBody && <p>{about.profileCard.secondaryBody}</p>}
+        <div class:list={["section-label", { "copy-slot": !about.profileCard.sectionLabel }]}>{about.profileCard.sectionLabel || blankLine}</div>
+        <h2 class:list={["card__title", { "copy-slot": !about.profileCard.title }]}>{about.profileCard.title || blankLine}</h2>
+        <p class:list={{ "copy-slot": !about.profileCard.body }}>{about.profileCard.body || blankLine}</p>
+        <p class:list={{ "copy-slot": !about.profileCard.secondaryBody }}>{about.profileCard.secondaryBody || blankLine}</p>
       </div>
       <aside class="note-panel">
-        <div class="section-label">{about.facts.sectionLabel}</div>
+        <div class:list={["section-label", { "copy-slot": !about.facts.sectionLabel }]}>{about.facts.sectionLabel || blankLine}</div>
         <div class="about-list">
-          {about.facts.location && (
-            <div>
-              <strong>{about.facts.locationLabel}</strong>
-              <p>{about.facts.location}</p>
-            </div>
-          )}
-          {about.facts.email && (
-            <div>
-              <strong>{about.facts.emailLabel}</strong>
-              <p>{about.facts.email}</p>
-            </div>
-          )}
-          {about.facts.topics && (
-            <div>
-              <strong>{about.facts.topicsLabel}</strong>
-              <p>{about.facts.topics}</p>
-            </div>
-          )}
+          <div>
+            <strong class:list={{ "copy-slot": !about.facts.locationLabel }}>{about.facts.locationLabel || blankLine}</strong>
+            <p class:list={{ "copy-slot": !about.facts.location }}>{about.facts.location || blankLine}</p>
+          </div>
+          <div>
+            <strong class:list={{ "copy-slot": !about.facts.emailLabel }}>{about.facts.emailLabel || blankLine}</strong>
+            <p class:list={{ "copy-slot": !about.facts.email }}>{about.facts.email || blankLine}</p>
+          </div>
+          <div>
+            <strong class:list={{ "copy-slot": !about.facts.topicsLabel }}>{about.facts.topicsLabel || blankLine}</strong>
+            <p class:list={{ "copy-slot": !about.facts.topics }}>{about.facts.topics || blankLine}</p>
+          </div>
         </div>
       </aside>
     </div>
@@ -81,14 +76,14 @@ const about = aboutData as AboutContent;
           <h2>外部链接</h2>
         </div>
       </div>
-      <div class="grid grid--three">
-        {about.links.map((link) => (
-          <a class="card" href={link.href} target="_blank" rel="noreferrer">
-            <div class="section-label">{link.label}</div>
-            <h3 class="card__title">{link.href.replace(/^mailto:/, "")}</h3>
-          </a>
-        ))}
-      </div>
+        <div class="grid grid--three">
+          {about.links.map((link) => (
+            <a class="card" href={link.href} target="_blank" rel="noreferrer">
+              <div class:list={["section-label", { "copy-slot": !link.label }]}>{link.label || blankLine}</div>
+              <h3 class:list={["card__title", { "copy-slot": !link.href }]}>{(link.href || blankLine).replace(/^mailto:/, "")}</h3>
+            </a>
+          ))}
+        </div>
     </section>
   )}
 </SiteLayout>

@@ -10,4 +10,4 @@ echo "==> Building site"
 npm run build
 
 echo "==> Deploying site"
-SKIP_BUILD=1 bash scripts/deploy.sh
+SKIP_BUILD=1 SKIP_ADMIN_RESTART=1 bash scripts/deploy.sh

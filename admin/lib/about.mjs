@@ -10,6 +10,10 @@ function readConfig() {
 }
 
 function normalizeLink(link, index) {
+  if (!isNonEmptyString(link?.label) && !isNonEmptyString(link?.href)) {
+    return null;
+  }
+
   if (!isNonEmptyString(link?.label) || !isNonEmptyString(link?.href)) {
     throw new Error(`About link #${index + 1} must include label and href.`);
   }
@@ -25,14 +29,6 @@ export function getAboutConfig() {
 }
 
 export function updateAboutConfig(payload) {
-  if (!isNonEmptyString(payload?.hero?.title) || !isNonEmptyString(payload?.hero?.intro)) {
-    throw new Error("About hero must include title and intro.");
-  }
-
-  if (!isNonEmptyString(payload?.profileCard?.title) || !isNonEmptyString(payload?.profileCard?.body)) {
-    throw new Error("About profile card must include title and body.");
-  }
-
   if (!payload?.facts || typeof payload.facts !== "object") {
     throw new Error("About facts are required.");
   }
@@ -40,13 +36,13 @@ export function updateAboutConfig(payload) {
   const normalized = {
     hero: {
       eyebrow: String(payload.hero.eyebrow ?? "").trim(),
-      title: payload.hero.title.trim(),
-      intro: payload.hero.intro.trim(),
+      title: String(payload.hero.title ?? "").trim(),
+      intro: String(payload.hero.intro ?? "").trim(),
     },
     profileCard: {
       sectionLabel: String(payload.profileCard.sectionLabel ?? "").trim(),
-      title: payload.profileCard.title.trim(),
-      body: payload.profileCard.body.trim(),
+      title: String(payload.profileCard.title ?? "").trim(),
+      body: String(payload.profileCard.body ?? "").trim(),
       secondaryBody: String(payload.profileCard.secondaryBody ?? "").trim(),
     },
     facts: {
@@ -58,7 +54,7 @@ export function updateAboutConfig(payload) {
       topicsLabel: String(payload.facts.topicsLabel ?? "").trim(),
       topics: String(payload.facts.topics ?? "").trim(),
     },
-    links: Array.isArray(payload.links) ? payload.links.map(normalizeLink) : [],
+    links: Array.isArray(payload.links) ? payload.links.map(normalizeLink).filter(Boolean) : [],
   };
 
   fs.writeFileSync(aboutConfigPath, `${JSON.stringify(normalized, null, 2)}\n`);
