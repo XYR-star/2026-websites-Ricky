@@ -1,0 +1,34 @@
+backend:
+  name: turbo-github
+  turbo_site_id: 00000000-0000-0000-0000-000000000000
+  branch: decap-preview
+  cms_label_prefix: decap-preview/
+
+publish_mode: editorial_workflow
+locale: zh_Hans
+
+media_folder: public/images/cms-trial
+public_folder: /images/cms-trial
+
+collections:
+  - name: travel
+    label: 游记
+    folder: src/content/travel
+    create: true
+    delete: false
+    extension: md
+    format: frontmatter
+    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    preview_path: "travel/{{slug}}/"
+    fields:
+      - { label: 标题, name: title, widget: string }
+      - { label: 简介, name: description, widget: text }
+      - label: 日期
+        name: date
+        widget: datetime
+        date_format: YYYY-MM-DD
+        time_format: false
+        format: YYYY-MM-DD
+      - { label: 封面, name: cover, widget: image }
+      - { label: 站点草稿标记, name: draft, widget: hidden, default: false }
+      - { label: 正文, name: body, widget: markdown }
