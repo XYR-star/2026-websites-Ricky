@@ -10,12 +10,6 @@ locale: zh_Hans
 media_folder: public/images/cms-trial
 public_folder: images/cms-trial
 
-media_library:
-  name: ricky-r2
-  config:
-    upload_url: https://ricky-media-upload.wby102150.workers.dev/
-    public_url: https://pub-9f290c4c2d7b479fad35f3c7051d2d9f.r2.dev
-
 collections:
   - name: travel
     label: 游记
