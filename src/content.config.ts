@@ -1,4 +1,5 @@
 import { defineCollection, z } from "astro:content";
+import { cmsTrialMediaUrl } from "./lib/cms-trial-media.mjs";
 
 const blog = defineCollection({
   schema: z.object({
@@ -35,7 +36,7 @@ const travel = defineCollection({
     description: z.string(),
     date: z.coerce.date(),
     draft: z.boolean().default(false),
-    cover: z.string(),
+    cover: z.string().transform(cmsTrialMediaUrl),
   }),
 });
 

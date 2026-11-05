@@ -8,7 +8,7 @@ publish_mode: editorial_workflow
 locale: zh_Hans
 
 media_folder: public/images/cms-trial
-public_folder: /images/cms-trial
+public_folder: images/cms-trial
 
 collections:
   - name: travel
