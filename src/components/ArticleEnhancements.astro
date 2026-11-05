@@ -5,7 +5,10 @@
 
     const imageParagraphs = Array.from(article.querySelectorAll("p")).filter((node) => {
       if (node.children.length !== 1) return false;
-      return node.firstElementChild?.tagName === "IMG";
+      const image = node.firstElementChild;
+      return image?.tagName === "IMG" && Array.from(node.childNodes).every((child) =>
+        child === image || (child.nodeType === Node.TEXT_NODE && !child.textContent.trim()),
+      );
     });
 
     imageParagraphs.forEach((paragraph) => {
@@ -14,7 +17,6 @@
 
       const figure = document.createElement("figure");
       figure.className = "prose-figure";
-      image.loading = "lazy";
 
       const captionText = image.getAttribute("title") || image.getAttribute("alt") || "";
       paragraph.replaceWith(figure);
@@ -64,6 +66,9 @@
     const lightbox = document.createElement("div");
     lightbox.className = "image-lightbox";
     lightbox.setAttribute("hidden", "");
+    lightbox.setAttribute("role", "dialog");
+    lightbox.setAttribute("aria-modal", "true");
+    lightbox.setAttribute("aria-label", "图片查看");
     lightbox.innerHTML = `
       <button class="image-lightbox__close" type="button" aria-label="关闭图片查看">×</button>
       <div class="image-lightbox__inner">
@@ -76,10 +81,13 @@
     const lightboxImage = lightbox.querySelector(".image-lightbox__image");
     const lightboxCaption = lightbox.querySelector(".image-lightbox__caption");
     const closeButton = lightbox.querySelector(".image-lightbox__close");
+    let activeTrigger;
 
     const closeLightbox = () => {
       lightbox.setAttribute("hidden", "");
       document.body.classList.remove("has-lightbox");
+      if (activeTrigger?.isConnected) activeTrigger.focus();
+      activeTrigger = undefined;
     };
 
     closeButton?.addEventListener("click", closeLightbox);
@@ -90,20 +98,55 @@
     });
 
     document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape" && !lightbox.hasAttribute("hidden")) {
+      if (lightbox.hasAttribute("hidden")) return;
+      if (event.key === "Escape") {
+        event.preventDefault();
         closeLightbox();
+      } else if (event.key === "Tab") {
+        event.preventDefault();
+        closeButton?.focus();
       }
     });
 
     article.querySelectorAll(".prose-figure img").forEach((image) => {
+      if (image.closest("a, button")) return;
+      const trigger = document.createElement("button");
+      trigger.type = "button";
+      trigger.className = "image-lightbox-trigger";
+      const description = image.getAttribute("title") || image.alt || "";
+      trigger.setAttribute("aria-label", description ? "放大图片 " + description : "放大图片");
+      trigger.setAttribute("aria-haspopup", "dialog");
+      image.before(trigger);
+      trigger.appendChild(image);
       image.classList.add("is-lightboxable");
-      image.addEventListener("click", () => {
+      trigger.addEventListener("click", () => {
         lightboxImage.src = image.currentSrc || image.src;
         lightboxImage.alt = image.alt || "";
         lightboxCaption.textContent = image.getAttribute("title") || image.getAttribute("alt") || "";
         lightbox.removeAttribute("hidden");
         document.body.classList.add("has-lightbox");
+        activeTrigger = trigger;
+        closeButton?.focus();
       });
     });
   })();
 </script>
+
+<style is:global>
+  .prose-figure .image-lightbox-trigger {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    cursor: zoom-in;
+    border-radius: 24px;
+  }
+
+  .prose-figure .image-lightbox-trigger:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 4px;
+  }
+</style>
