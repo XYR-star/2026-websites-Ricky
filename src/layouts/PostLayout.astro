@@ -40,9 +40,16 @@ const {
   next = null,
   related = [],
 } = Astro.props;
+
+const coverUrl = cover && URL.canParse(cover, Astro.url) ? new URL(cover, Astro.url) : undefined;
+const assetOrigin = coverUrl && [
+  "https://assets.heyrickishere.com",
+  "https://pub-9f290c4c2d7b479fad35f3c7051d2d9f.r2.dev",
+].includes(coverUrl.origin) ? coverUrl.origin : undefined;
 ---
 
 <SiteLayout title={`${title} · Ricky`} description={description}>
+  {assetOrigin && <link slot="head" rel="preconnect" href={assetOrigin} />}
   <section class="shell page-hero">
     <div class="eyebrow">{eyebrow}</div>
     <h1>{title}</h1>
@@ -56,7 +63,7 @@ const {
   </section>
   {cover && (
     <section class="shell article-cover-wrap">
-      <img class="article-cover" src={cover} alt={title} />
+      <img class="article-cover" src={cover} alt={title} fetchpriority="high" />
     </section>
   )}
   <article class="prose" data-article-prose>

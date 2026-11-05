@@ -1,0 +1,86 @@
+html,
+body {
+  margin: 0;
+  color: #1f1a17;
+  background: #f4efe7;
+}
+
+.travel-preview {
+  box-sizing: border-box;
+  max-width: 760px;
+  min-width: 0;
+  margin-inline: auto;
+  padding: clamp(1rem, 5vw, 3rem);
+  overflow-wrap: anywhere;
+  font: 1rem/1.7 system-ui, sans-serif;
+}
+
+.travel-preview__header {
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #ded1c6;
+}
+
+.travel-preview__kicker,
+.travel-preview__date {
+  margin: 0;
+  color: #6e6258;
+  font-size: 0.875rem;
+}
+
+.travel-preview__kicker {
+  color: #8a3f2d;
+  font-weight: 650;
+}
+
+.travel-preview__header h1,
+.travel-preview__body :is(h1, h2, h3, h4) {
+  font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  line-height: 1.24;
+}
+
+.travel-preview__header h1 {
+  margin: 0.35rem 0 0.5rem;
+  font-size: clamp(1.65rem, 6vw, 3rem);
+}
+
+.travel-preview__description {
+  margin: 0.75rem 0 0;
+  color: #6e6258;
+}
+
+.travel-preview__cover {
+  margin: 0 0 1.5rem;
+}
+
+.travel-preview :is(img, video) {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.65rem;
+}
+
+.travel-preview__cover img {
+  width: 100%;
+  max-height: 24rem;
+  object-fit: contain;
+  background: #ede6dc;
+}
+
+.travel-preview__body :is(pre, table) {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.travel-preview__body a {
+  color: #8a3f2d;
+}
+
+.travel-preview__placeholder {
+  padding: 0.75rem 1rem;
+  border: 1px dashed #d0bfb0;
+  border-radius: 0.65rem;
+  color: #6e6258;
+  font-size: 0.9rem;
+}

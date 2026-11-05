@@ -37,6 +37,7 @@ const travel = defineCollection({
     date: z.coerce.date(),
     draft: z.boolean().default(false),
     cover: z.string().transform(cmsTrialMediaUrl),
+    media_id: z.string().uuid().optional(),
   }),
 });
 

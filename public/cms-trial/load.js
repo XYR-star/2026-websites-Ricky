@@ -1,3 +1,5 @@
+import { registerArticlePreview } from "./article-preview.js";
+import { checkTravelPublication } from "./publish-check.js";
 import { r2MediaLibrary } from "./r2-media.js";
 
 const statusMessage = document.getElementById("status");
@@ -12,8 +14,12 @@ try {
     window.CMS_MANUAL_INIT = true;
     const script = document.createElement("script");
     script.src = "https://cdn.jsdelivr.net/npm/decap-cms@3.17.3/dist/decap-cms.js";
+    script.integrity = "sha384-RWRzuHfiZSWCt3nEvG7B0v3cMgM1C2UuJmgBSL92GQh4uXmNSkbcthql/mNBqvjr";
+    script.crossOrigin = "anonymous";
     script.onload = () => {
       window.CMS.registerMediaLibrary(r2MediaLibrary);
+      registerArticlePreview(window.CMS);
+      window.CMS.registerEventListener({ name: "prePublish", handler: checkTravelPublication });
       window.CMS.init();
       statusMessage.remove();
     };

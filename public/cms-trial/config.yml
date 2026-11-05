@@ -10,6 +10,11 @@ locale: zh_Hans
 media_folder: public/images/cms-trial
 public_folder: images/cms-trial
 
+media_library:
+  name: ricky-r2
+  config:
+    upload_url: https://ricky-media-upload.wby102150.workers.dev/
+
 collections:
   - name: travel
     label: 游记
@@ -29,6 +34,13 @@ collections:
         date_format: YYYY-MM-DD
         time_format: false
         format: YYYY-MM-DD
-      - { label: 封面, name: cover, widget: image }
+      - label: 封面
+        name: cover
+        widget: image
+        hint: 上传原图或复用本篇游记的素材。正文也可使用同一个素材目录。
+      - label: 文章素材目录 ID
+        name: media_id
+        widget: uuid
+        hint: 自动生成。标题或文件名变化时，此目录保持不变。
       - { label: 站点草稿标记, name: draft, widget: hidden, default: false }
       - { label: 正文, name: body, widget: markdown }
