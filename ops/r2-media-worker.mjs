@@ -210,10 +210,12 @@ body{font:1rem system-ui,sans-serif;max-width:42rem;margin:3rem auto;padding:0 1
 [hidden]{display:none!important}
 label,input,button{display:block;margin:.8rem 0}button{padding:.5rem .8rem}
 #url{width:100%;box-sizing:border-box}button:disabled{opacity:.6}
-#gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(8rem,1fr));gap:.6rem}
-#gallery button{margin:0;min-width:0;overflow-wrap:anywhere;text-align:left}
-#gallery img{display:block;width:100%;height:6rem;object-fit:cover}
-#gallery small{display:block}
+.gallery-tabs{display:flex;gap:.5rem}
+.gallery-tabs button[aria-pressed="true"]{font-weight:bold;border-color:currentColor}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(8rem,1fr));gap:.6rem}
+.gallery button{margin:0;min-width:0;overflow-wrap:anywhere;text-align:left}
+.gallery img{display:block;width:100%;height:6rem;object-fit:cover}
+.gallery small{display:block}
 </style>
 </head>
 <body>
@@ -226,9 +228,14 @@ label,input,button{display:block;margin:.8rem 0}button{padding:.5rem .8rem}
 </form>
 <p id="status" role="status"></p>
 <section id="media" hidden>
-<h2>此文章的图片</h2>
+<h2>图片素材</h2>
+<div class="gallery-tabs" role="group" aria-label="素材分类">
+<button id="article-tab" type="button" aria-pressed="true" aria-controls="article-gallery">本篇素材</button>
+<button id="legacy-tab" type="button" aria-pressed="false" aria-controls="legacy-gallery">旧素材</button>
+</div>
 <p id="gallery-status" role="status"></p>
-<div id="gallery"></div>
+<div id="article-gallery" class="gallery"></div>
+<div id="legacy-gallery" class="gallery" hidden></div>
 <button id="more" type="button" hidden>加载更多图片</button>
 </section>
 <section id="result" hidden>
@@ -247,12 +254,23 @@ const uploadButton = document.getElementById("upload");
 const result = document.getElementById("result");
 const urlInput = document.getElementById("url");
 const returnLink = document.getElementById("return");
-const gallery = document.getElementById("gallery");
 const galleryStatus = document.getElementById("gallery-status");
 const more = document.getElementById("more");
 const groupQuery = settings.group ? "?" + new URLSearchParams(settings.group) : "";
-const displayed = new Set();
-let cursor = null;
+const views = {
+  article: { query: settings.group, emptyMessage: "这篇文章还没有图片。" },
+  legacy: { query: null, emptyMessage: "没有旧素材。" },
+};
+for (const [name, view] of Object.entries(views)) {
+  view.gallery = document.getElementById(name + "-gallery");
+  view.button = document.getElementById(name + "-tab");
+  view.displayed = new Set();
+  view.cursor = null;
+  view.loading = false;
+  view.loaded = false;
+  view.error = false;
+}
+let activeView = views.article;
 if (settings.title) {
   const articleTitle = document.getElementById("article-title");
   articleTitle.textContent = settings.title;
@@ -272,9 +290,9 @@ function returnImage(url, message) {
   }
 }
 
-function addImage({ url, name, size }, prepend = false) {
-  if (displayed.has(url)) return;
-  displayed.add(url);
+function addImage(view, { url, name, size }, prepend = false) {
+  if (view.displayed.has(url)) return;
+  view.displayed.add(url);
   const button = document.createElement("button");
   button.type = "button";
   const label = document.createElement("span");
@@ -301,35 +319,60 @@ function addImage({ url, name, size }, prepend = false) {
   button.append(label, details);
   card.append(button, preview);
   button.addEventListener("click", () => returnImage(url, "已选中图片。"));
-  if (prepend) gallery.prepend(card);
-  else gallery.append(card);
+  if (prepend) view.gallery.prepend(card);
+  else view.gallery.append(card);
 }
 
-async function loadImages() {
-  more.hidden = true;
-  galleryStatus.textContent = "正在读取图片…";
+function renderGalleryStatus() {
+  const { loading, error, loaded, displayed, emptyMessage, cursor } = activeView;
+  galleryStatus.textContent = loading ? "正在读取图片…"
+    : error ? "读取图片列表失败。"
+    : loaded && !displayed.size ? emptyMessage : "";
+  more.textContent = error ? "重试" : "加载更多图片";
+  more.hidden = loading || (!error && !cursor);
+}
+
+async function loadImages(view) {
+  if (view.loading) return;
+  view.loading = true;
+  view.error = false;
+  if (view === activeView) renderGalleryStatus();
   try {
-    const query = new URLSearchParams(settings.group);
-    if (cursor) query.set("cursor", cursor);
-    const response = await fetch("/media?" + query);
+    const query = new URLSearchParams(view.query ?? {});
+    if (view.cursor) query.set("cursor", view.cursor);
+    const search = query.toString();
+    const response = await fetch("/media" + (search ? "?" + search : ""));
     if (!response.ok) throw new Error();
     const data = await response.json();
-    for (const image of data.items) addImage(image);
-    cursor = data.cursor;
-    galleryStatus.textContent = displayed.size ? "" : "这篇文章还没有图片。";
-    more.textContent = "加载更多图片";
-    more.hidden = !cursor;
+    for (const image of data.items) addImage(view, image);
+    view.cursor = data.cursor;
+    view.loaded = true;
   } catch {
-    galleryStatus.textContent = "读取图片列表失败。";
-    more.textContent = "重试";
-    more.hidden = false;
+    view.error = true;
+  } finally {
+    view.loading = false;
+    if (view === activeView) renderGalleryStatus();
   }
+}
+
+function selectGallery(view) {
+  activeView = view;
+  for (const candidate of Object.values(views)) {
+    const selected = candidate === view;
+    candidate.gallery.hidden = !selected;
+    candidate.button.setAttribute("aria-pressed", String(selected));
+  }
+  renderGalleryStatus();
+  if (!view.loaded && !view.error) void loadImages(view);
 }
 
 if (settings.group) {
   document.getElementById("media").hidden = false;
-  more.addEventListener("click", loadImages);
-  void loadImages();
+  for (const view of Object.values(views)) {
+    view.button.addEventListener("click", () => selectGallery(view));
+  }
+  more.addEventListener("click", () => void loadImages(activeView));
+  selectGallery(views.article);
 }
 
 document.getElementById("copy").addEventListener("click", async () => {
@@ -366,8 +409,8 @@ form.addEventListener("submit", async event => {
       throw new Error(data?.error || "上传失败，请检查登录状态后重试。");
     }
     if (settings.group) {
-      addImage({ url: data.url, name: file.name, size: file.size }, true);
-      galleryStatus.textContent = "";
+      addImage(views.article, { url: data.url, name: file.name, size: file.size }, true);
+      if (activeView === views.article) renderGalleryStatus();
     }
     returnImage(data.url, "图片已上传。");
   } catch (error) {
