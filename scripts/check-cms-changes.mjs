@@ -9,8 +9,9 @@ export function validateCMSChanges({ headRef, baseRef, sameRepository, changes }
   }
   const article = `src/content/travel/${match[1]}.md`;
   const historicalImage = /^public\/images\/cms-trial\/[a-zA-Z0-9_-]+\.(?:jpg|jpeg|png|webp|gif|avif)$/i;
-  if (!changes.some(({ path }) => path === article) || changes.some(({ status, path }) =>
-    !["A", "M"].includes(status) || (path !== article && !historicalImage.test(path)))) {
+  if (!changes.some(({ path }) => path === article) || changes.some(({ status, path, mode }) =>
+    !["A", "M"].includes(status) || mode !== "100644" ||
+    (path !== article && !historicalImage.test(path)))) {
     throw new Error("A CMS pull request may only add or update its own article and historical CMS images.");
   }
 }
@@ -30,7 +31,10 @@ if (process.env.GITHUB_EVENT_PATH) {
     if (records.length % 2) throw new Error("Invalid changed-file list.");
     const changes = [];
     for (let index = 0; index < records.length; index += 2) {
-      changes.push({ status: records[index], path: records[index + 1] });
+      const path = records[index + 1];
+      const tree = execFileSync("git", ["ls-tree", "-z", headSha, "--", path], { encoding: "utf8" });
+      const mode = /^(\d{6}) blob [a-f0-9]{40}\t/.exec(tree)?.[1];
+      changes.push({ status: records[index], path, mode });
     }
     validateCMSChanges({
       headRef: pull.head.ref,
