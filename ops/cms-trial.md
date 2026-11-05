@@ -1,5 +1,7 @@
 # Decap 游记试用
 
+正式切换说明见 [cms-production.md](./cms-production.md)。正式启用后，旧试用入口跳转至 `/admin/`；本文件保留试用阶段的配置说明。
+
 试用后台在预览分支的 `/cms-trial/index.html`。文章保存到 GitHub 草稿分支，发布到 `decap-preview`。通过 Vercel 的分支地址查看已发布的游记。
 
 ## 写作和素材

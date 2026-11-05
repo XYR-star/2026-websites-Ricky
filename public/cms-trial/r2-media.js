@@ -40,6 +40,10 @@ export const r2MediaLibrary = {
   name: "ricky-r2",
   init({ options, handleInsert }) {
     const worker = new URL(options.config.upload_url);
+    const editorMode = options.config.editor_mode ?? "trial";
+    if (!["trial", "production"].includes(editorMode)) {
+      throw new Error("素材库的编辑器来源配置无效。");
+    }
     let cancel = () => {};
 
     return {
@@ -52,6 +56,7 @@ export const r2MediaLibrary = {
         }
         const nonce = crypto.randomUUID();
         const url = new URL(worker);
+        url.searchParams.set("editor", editorMode);
         url.searchParams.set("nonce", nonce);
         url.searchParams.set("collection", article.collection);
         url.searchParams.set("folder", article.folder);

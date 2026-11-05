@@ -1,0 +1,49 @@
+backend:
+  name: turbo-github
+  turbo_site_id: 4b2af71d-014c-4cb8-b118-860157b1f079
+  branch: main
+  cms_label_prefix: cms/
+
+publish_mode: editorial_workflow
+locale: zh_Hans
+site_url: https://www.heyrickishere.com
+display_url: https://www.heyrickishere.com
+
+media_folder: public/images/cms-trial
+public_folder: images/cms-trial
+
+media_library:
+  name: ricky-r2
+  config:
+    upload_url: https://ricky-media-upload.wby102150.workers.dev/
+    editor_mode: production
+
+collections:
+  - name: travel
+    label: 游记
+    folder: src/content/travel
+    create: true
+    delete: false
+    extension: md
+    format: frontmatter
+    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    preview_path: "travel/{{slug}}/"
+    fields:
+      - { label: 标题, name: title, widget: string }
+      - { label: 简介, name: description, widget: text }
+      - label: 日期
+        name: date
+        widget: datetime
+        date_format: YYYY-MM-DD
+        time_format: false
+        format: YYYY-MM-DD
+      - label: 封面
+        name: cover
+        widget: image
+        hint: 上传原图或复用本篇游记的素材。正文也可使用同一个素材目录。
+      - label: 文章素材目录 ID
+        name: media_id
+        widget: uuid
+        hint: 自动生成。标题或文件名变化时，此目录保持不变。
+      - { label: 站点草稿标记, name: draft, widget: hidden, default: false }
+      - { label: 正文, name: body, widget: markdown }

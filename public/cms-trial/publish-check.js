@@ -1,5 +1,4 @@
 const REPO = "XYR-star/2026-websites-Ricky";
-const BRANCH = "decap-preview";
 const API = "https://api.github.com/repos/" + REPO;
 
 async function github(path) {
@@ -12,7 +11,10 @@ async function github(path) {
   return response.json();
 }
 
-export async function checkTravelPublication({ entry }) {
+export async function checkTravelPublication({ entry }, branch = "decap-preview") {
+  if (!["main", "decap-preview"].includes(branch)) {
+    throw new Error("后台发布目标无效，请重新打开编辑器。");
+  }
   const collection = entry.get("collection");
   const slug = entry.get("slug");
   if (collection !== "travel" || typeof slug !== "string" ||
@@ -20,10 +22,10 @@ export async function checkTravelPublication({ entry }) {
     throw new Error("无法核对这篇游记的草稿路径。");
   }
   const headRef = "cms/" + collection + "/" + slug;
-  const query = new URLSearchParams({ state: "open", base: BRANCH, head: "XYR-star:" + headRef });
+  const query = new URLSearchParams({ state: "open", base: branch, head: "XYR-star:" + headRef });
   const matches = await github("/pulls?" + query);
   const pull = Array.isArray(matches) && matches.find((candidate) =>
-    candidate.base?.ref === BRANCH && candidate.head?.ref === headRef &&
+    candidate.base?.ref === branch && candidate.head?.ref === headRef &&
     candidate.head.repo?.full_name?.toLowerCase() === REPO.toLowerCase(),
   );
   if (!pull || ![pull.base?.sha, pull.head?.sha].every((sha) => /^[a-f0-9]{40}$/.test(sha ?? ""))) {

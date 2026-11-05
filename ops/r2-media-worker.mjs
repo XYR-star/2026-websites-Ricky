@@ -8,7 +8,16 @@ const IMAGE_EXTENSIONS = new Map([
 ]);
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const COLLECTIONS = new Set(["travel", "blog", "research"]);
-const DECAP_ORIGIN = "https://2026-websites-ricky-git-decap-preview-xyr-stars-projects.vercel.app";
+const EDITORS = new Map([
+  ["trial", {
+    origin: "https://2026-websites-ricky-git-decap-preview-xyr-stars-projects.vercel.app",
+    returnPath: "/cms-trial/r2-return.html",
+  }],
+  ["production", {
+    origin: "https://www.heyrickishere.com",
+    returnPath: "/admin/r2-return.html",
+  }],
+]);
 const DEFAULT_PUBLIC_BASE = "https://pub-9f290c4c2d7b479fad35f3c7051d2d9f.r2.dev";
 const MEDIA_PAGE_SIZE = 24;
 
@@ -195,9 +204,12 @@ async function listMedia(env, media, group, cursor) {
   }
 }
 
-function page(nonce, media, group, title) {
+function page(nonce, media, group, title, editor) {
   const cspNonce = crypto.randomUUID();
-  const settings = JSON.stringify({ nonce, origin: DECAP_ORIGIN, maxBytes: MAX_IMAGE_BYTES, group, title })
+  const settings = JSON.stringify({
+    nonce, origin: editor.origin, returnPath: editor.returnPath,
+    maxBytes: MAX_IMAGE_BYTES, group, title,
+  })
     .replace(/</g, "\\u003c");
   const html = `<!doctype html>
 <html lang="zh-CN">
@@ -282,7 +294,7 @@ function returnImage(url, message) {
   result.hidden = false;
   status.textContent = message;
   if (!settings.nonce) return;
-  returnLink.href = settings.origin + "/cms-trial/r2-return.html#" +
+  returnLink.href = settings.origin + settings.returnPath + "#" +
     new URLSearchParams({ nonce: settings.nonce, url });
   returnLink.hidden = false;
   if (window.opener) {
@@ -461,7 +473,9 @@ export default {
     if (url.pathname === "/" && request.method === "GET") {
       const nonce = url.searchParams.get("nonce");
       if (nonce !== null && !UUID.test(nonce)) return json(400, { error: "无效的编辑器请求。" });
-      return page(nonce, media, group, safeLabel(url.searchParams.get("title"), 120));
+      const editor = EDITORS.get(url.searchParams.get("editor") ?? "trial");
+      if (!editor) return json(400, { error: "无效的编辑器来源。" });
+      return page(nonce, media, group, safeLabel(url.searchParams.get("title"), 120), editor);
     }
     if (url.pathname === "/upload" && request.method === "POST") {
       return upload(request, env, url, media, group);

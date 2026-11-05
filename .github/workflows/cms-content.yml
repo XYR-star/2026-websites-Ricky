@@ -1,0 +1,23 @@
+name: CMS publication
+
+on:
+  pull_request_target:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  content:
+    name: CMS content changes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.pull_request.base.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate CMS publication paths
+        run: node scripts/check-cms-changes.mjs
