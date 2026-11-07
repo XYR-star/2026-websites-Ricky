@@ -1,5 +1,6 @@
 import { registerArticlePreview } from "./article-preview.js";
-import { checkTravelPublication } from "./publish-check.js";
+import { checkArticlePublication } from "./publish-check.js";
+import { mountWritingHelp } from "../admin/writing-help.js";
 import { r2MediaLibrary } from "./r2-media.js";
 
 export async function startCMS({ configPath, branch }) {
@@ -22,9 +23,10 @@ export async function startCMS({ configPath, branch }) {
       registerArticlePreview(window.CMS);
       window.CMS.registerEventListener({
         name: "prePublish",
-        handler: (event) => checkTravelPublication(event, branch),
+        handler: (event) => checkArticlePublication(event, branch),
       });
       window.CMS.init();
+      mountWritingHelp();
       statusMessage.remove();
     };
     script.onerror = () => { statusMessage.textContent = "编辑器加载失败，请刷新重试。"; };

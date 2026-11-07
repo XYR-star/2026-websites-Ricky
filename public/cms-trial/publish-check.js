@@ -1,6 +1,13 @@
 const REPO = "XYR-star/2026-websites-Ricky";
 const API = "https://api.github.com/repos/" + REPO;
 
+function validSlug(slug) {
+  return typeof slug === "string" && slug.length > 0 &&
+    !slug.startsWith(".") && !slug.endsWith(".") && !/\.lock$/i.test(slug) &&
+    !slug.includes("..") && !slug.includes("@{") &&
+    !/[\\/\x00-\x20\x7f~^:?*\[\]]/.test(slug);
+}
+
 async function github(path) {
   const response = await fetch(API + path, {
     cache: "no-store",
@@ -11,21 +18,21 @@ async function github(path) {
   return response.json();
 }
 
-export async function checkTravelPublication({ entry }, branch = "decap-preview") {
+export async function checkArticlePublication({ entry }, branch = "main") {
   if (!["main", "decap-preview"].includes(branch)) {
     throw new Error("后台发布目标无效，请重新打开编辑器。");
   }
   const collection = entry.get("collection");
   const slug = entry.get("slug");
-  if (collection !== "travel" || typeof slug !== "string" ||
-      !slug || /[\\/\x00-\x1f]/.test(slug)) {
-    throw new Error("无法核对这篇游记的草稿路径。");
+  if (!["blog", "travel"].includes(collection) || !validSlug(slug)) {
+    throw new Error("无法核对这篇文章的草稿路径。");
   }
   const headRef = "cms/" + collection + "/" + slug;
   const query = new URLSearchParams({ state: "open", base: branch, head: "XYR-star:" + headRef });
   const matches = await github("/pulls?" + query);
   const pull = Array.isArray(matches) && matches.find((candidate) =>
-    candidate.base?.ref === branch && candidate.head?.ref === headRef &&
+    candidate.state === "open" && candidate.base?.ref === branch && candidate.head?.ref === headRef &&
+    candidate.base.repo?.full_name?.toLowerCase() === REPO.toLowerCase() &&
     candidate.head.repo?.full_name?.toLowerCase() === REPO.toLowerCase(),
   );
   if (!pull || ![pull.base?.sha, pull.head?.sha].every((sha) => /^[a-f0-9]{40}$/.test(sha ?? ""))) {
@@ -40,3 +47,6 @@ export async function checkTravelPublication({ entry }, branch = "decap-preview"
     throw new Error("此草稿还包含站点配置或其他文件。请先在 GitHub 核对 PR，再发布。");
   }
 }
+
+// Keep older, cached trial loaders working while the shared loader adopts the generic name.
+export const checkTravelPublication = checkArticlePublication;

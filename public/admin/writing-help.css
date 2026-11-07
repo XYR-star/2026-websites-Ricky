@@ -1,0 +1,136 @@
+#writing-help {
+  position: fixed;
+  right: max(1rem, env(safe-area-inset-right));
+  bottom: max(0.75rem, env(safe-area-inset-bottom));
+  z-index: 100;
+  color: #253744;
+  font: 0.875rem/1.65 system-ui, -apple-system, "PingFang SC", sans-serif;
+}
+
+#writing-help button {
+  min-height: 44px;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid #cbd8df;
+  border-radius: 0.7rem;
+  background: #fff;
+  color: #24556c;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+#writing-help .writing-help__open {
+  box-shadow: 0 3px 16px #17394b1c;
+}
+
+#writing-help button:hover {
+  background: #edf6fa;
+}
+
+#writing-help button:focus-visible {
+  outline: 3px solid #1983a8;
+  outline-offset: 3px;
+}
+
+#writing-help .writing-help__dialog {
+  box-sizing: border-box;
+  width: min(38rem, calc(100vw - 1.5rem));
+  max-height: calc(100dvh - 2rem);
+  margin: auto;
+  padding: 0;
+  overflow: auto;
+  border: 1px solid #d9e3e8;
+  border-radius: 1.1rem;
+  background: #fff;
+  color: #253744;
+  box-shadow: 0 24px 80px #17394b40;
+}
+
+#writing-help dialog::backdrop {
+  background: #142f4670;
+}
+
+#writing-help .writing-help__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.3rem 1.4rem 1rem;
+  border-bottom: 1px solid #e5edf1;
+  background: #f4f9fb;
+}
+
+#writing-help .writing-help__eyebrow {
+  margin: 0 0 0.15rem;
+  color: #647b88;
+  font-size: 0.75rem;
+}
+
+#writing-help h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  line-height: 1.4;
+}
+
+#writing-help .writing-help__content {
+  padding: 1.15rem 1.4rem 1.4rem;
+}
+
+#writing-help .writing-help__steps {
+  display: grid;
+  gap: 0.95rem;
+  margin: 0;
+  padding-left: 1.4rem;
+}
+
+#writing-help li::marker {
+  color: #1680a0;
+  font-weight: 750;
+}
+
+#writing-help li strong,
+#writing-help li span {
+  display: block;
+}
+
+#writing-help li span {
+  margin-top: 0.15rem;
+  color: #526a78;
+}
+
+#writing-help .writing-help__note {
+  margin-top: 1.15rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5edf1;
+}
+
+#writing-help h3 {
+  margin: 0 0 0.25rem;
+  font-size: 0.9rem;
+}
+
+#writing-help .writing-help__note p {
+  margin: 0;
+  color: #526a78;
+}
+
+#writing-help .writing-help__privacy {
+  margin: 1.15rem 0 0;
+  padding: 0.7rem 0.85rem;
+  border-radius: 0.6rem;
+  background: #f2f6f8;
+  color: #617783;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 420px) {
+  #writing-help {
+    right: 0.5rem;
+    bottom: max(0.5rem, env(safe-area-inset-bottom));
+  }
+
+  #writing-help .writing-help__header,
+  #writing-help .writing-help__content {
+    padding-inline: 1rem;
+  }
+}
