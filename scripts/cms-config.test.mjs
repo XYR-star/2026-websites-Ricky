@@ -40,6 +40,9 @@ test("new content preserves the Markdown contract and stable R2 directory field"
     assert.equal(field("draft").widget, "hidden");
     assert.equal(collection.delete, false);
     assert.equal(collection.preview_path, `${collection.name}/{{slug}}/`);
+    // Decap's year/month/day variables convert local midnight to UTC and can shift the day.
+    assert.equal(collection.slug, "{{date | date('YYYY-MM-DD')}}-{{slug}}");
+    assert.equal(collection.summary, "{{date | date('YYYY-MM-DD')}} · {{title}}");
     assert.equal(new RegExp(collection.view_groups[0].pattern).exec("2026-11-07")?.[0], "2026");
     assert.deepEqual(collection.sortable_fields.find((item) => item.field === "date"), {
       field: "date", label: "日期", default_sort: "desc",

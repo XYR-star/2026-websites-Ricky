@@ -28,9 +28,9 @@ collections:
     delete: false
     extension: md
     format: frontmatter
-    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    slug: "{{date | date('YYYY-MM-DD')}}-{{slug}}"
     preview_path: "blog/{{slug}}/"
-    summary: "{{year}}-{{month}}-{{day}} · {{title}}"
+    summary: "{{date | date('YYYY-MM-DD')}} · {{title}}"
     sortable_fields:
       - { field: date, label: 日期, default_sort: desc }
       - { field: title, label: 标题 }
@@ -66,9 +66,9 @@ collections:
     delete: false
     extension: md
     format: frontmatter
-    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    slug: "{{date | date('YYYY-MM-DD')}}-{{slug}}"
     preview_path: "travel/{{slug}}/"
-    summary: "{{year}}-{{month}}-{{day}} · {{title}}"
+    summary: "{{date | date('YYYY-MM-DD')}} · {{title}}"
     sortable_fields:
       - { field: date, label: 日期, default_sort: desc }
       - { field: title, label: 标题 }
