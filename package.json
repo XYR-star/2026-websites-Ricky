@@ -9,6 +9,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "check": "astro check",
+    "test:cms": "node --test scripts/check-cms-changes.test.mjs scripts/publish-check.test.mjs scripts/article-preview.test.mjs scripts/cms-config.test.mjs",
     "admin:start": "node admin/server.mjs",
     "admin:set-password": "node scripts/set-admin-password.mjs",
     "deploy": "bash scripts/deploy.sh",

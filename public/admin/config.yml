@@ -19,8 +19,48 @@ media_library:
     editor_mode: production
 
 collections:
+  - name: blog
+    label: 博客
+    label_singular: 博客文章
+    description: 日常记录与长文。未发布的文章从「工作流」继续编辑；换设备前请先保存。
+    folder: src/content/blog
+    create: true
+    delete: false
+    extension: md
+    format: frontmatter
+    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    preview_path: "blog/{{slug}}/"
+    summary: "{{year}}-{{month}}-{{day}} · {{title}}"
+    sortable_fields:
+      - { field: date, label: 日期, default_sort: desc }
+      - { field: title, label: 标题 }
+    view_groups:
+      - { label: 年份, field: date, pattern: '\d{4}' }
+    fields:
+      - { label: 标题, name: title, widget: string }
+      - { label: 简介, name: description, widget: text, hint: 用一两句话介绍文章，会展示在文章列表与分享摘要中。 }
+      - label: 日期
+        name: date
+        widget: datetime
+        date_format: YYYY-MM-DD
+        time_format: false
+        format: YYYY-MM-DD
+      - { label: 标签, name: tags, widget: list, required: false, default: [], hint: 多个标签用英文逗号分隔。 }
+      - label: 封面
+        name: cover
+        widget: image
+        required: false
+        hint: 可留空。图片保存在 R2，上传后还需保存文章。
+      - { label: 正文, name: body, widget: markdown, hint: 支持富文本与 Markdown 切换。换设备前请点保存，等待「修改已保存」。 }
+      - label: 素材归档（自动）
+        name: media_id
+        widget: uuid
+        hint: 自动生成并保持不变，用于归类本篇图片，无需填写。
+      - { label: 站点草稿标记, name: draft, widget: hidden, default: false }
   - name: travel
     label: 游记
+    label_singular: 游记
+    description: 记录旅途、上传原图。未发布的文章从「工作流」继续编辑；换设备前请先保存。
     folder: src/content/travel
     create: true
     delete: false
@@ -28,6 +68,12 @@ collections:
     format: frontmatter
     slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
     preview_path: "travel/{{slug}}/"
+    summary: "{{year}}-{{month}}-{{day}} · {{title}}"
+    sortable_fields:
+      - { field: date, label: 日期, default_sort: desc }
+      - { field: title, label: 标题 }
+    view_groups:
+      - { label: 年份, field: date, pattern: '\d{4}' }
     fields:
       - { label: 标题, name: title, widget: string }
       - { label: 简介, name: description, widget: text }
@@ -40,10 +86,10 @@ collections:
       - label: 封面
         name: cover
         widget: image
-        hint: 上传原图或复用本篇游记的素材。正文也可使用同一个素材目录。
-      - label: 文章素材目录 ID
+        hint: 上传原图或复用本篇游记的素材。上传后还需保存文章。
+      - { label: 正文, name: body, widget: markdown, hint: 支持富文本与 Markdown 切换。换设备前请点保存，等待「修改已保存」。 }
+      - label: 素材归档（自动）
         name: media_id
         widget: uuid
-        hint: 自动生成。标题或文件名变化时，此目录保持不变。
+        hint: 自动生成并保持不变，用于归类本篇图片，无需填写。
       - { label: 站点草稿标记, name: draft, widget: hidden, default: false }
-      - { label: 正文, name: body, widget: markdown }
