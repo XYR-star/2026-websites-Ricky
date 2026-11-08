@@ -1,10 +1,10 @@
 # 正式内容后台
 
-正式入口：`https://www.heyrickishere.com/admin/`。支持博客与游记，沿用封面、正文、审核、R2 原图和素材复用。研究文章仍按现有仓库流程维护。
+正式入口：`https://www.heyrickishere.com/admin/`。支持博客、游记、研究日志，以及首页、关于、近况、项目和站点文案。沿用保存、审核与发布流程；文章继续使用 R2 原图和素材复用。
 
 ## 工作流
 
-保存草稿会提交到 `cms/blog/<文章文件名>` 或 `cms/travel/<文章文件名>` 并创建面向 `main` 的 PR。发布合并到 `main` 后，Vercel 自动部署正式网站。后台显示的已发布表示 GitHub 已合并；正式页面更新还需等待 Vercel 部署成功。构建失败时，上一版正式网站和已保存的草稿仍保留。
+保存草稿会提交到 `cms/blog/<文章文件名>` 、`cms/travel/<文章文件名>`、`cms/research/<文章文件名>` 或 `cms/pages/<页面名>` 并创建面向 `main` 的 PR。发布合并到 `main` 后，Vercel 自动部署正式网站。后台显示的已发布表示 GitHub 已合并；正式页面更新还需等待 Vercel 部署成功。构建失败时，上一版正式网站和已保存的草稿仍保留。
 
 旧试用入口跳转正式后台。切换后关闭原试用编辑页面，刷新再编辑，避免两个后台复用同一草稿分支。不要同时在试用分支和正式分支编辑同一篇文章。正式配置使用现有 Turbo Site ID，`backend.branch: main` 覆盖 Turbo 默认分支。
 
@@ -14,7 +14,7 @@
 2. Decap Turbo：在现有站点 Overview 中，将 Admin interface URLs 设为 `https://www.heyrickishere.com/admin/`，Branch 设为 `main`，Config path 设为 `public/admin/config.yml`。不需要新建付费站点。只保留正式后台登录来源。
 3. GitHub：代码首次合入 `main`、`CMS content changes` 检查成功后，为 `main` 启用分支保护：必须通过 PR、必须通过 `CMS content changes` 检查。不要把 Decap Turbo App 加到绕过列表，不要求单人自己审核自己，禁用强制推送和分支删除。
 
-`scripts/check-cms-changes.mjs` 在 GitHub Actions 中核对 CMS PR 只改对应博客或游记及兼容的旧素材文件。检查使用目标分支代码，不执行草稿里的程序。普通开发 PR 不受 CMS 文件范围限制。浏览器发布前检查用于即时提示；GitHub 分支保护负责阻止绕过 PR 的写入，包括 CMS 合并失败时的直接写入回退。
+`scripts/check-cms-changes.mjs` 在 GitHub Actions 中核对 CMS PR 只改对应博客、游记、研究日志及兼容的旧素材文件；页面草稿只允许改对应的单个 JSON 文件。检查使用目标分支代码，不执行草稿里的程序。普通开发 PR 不受 CMS 文件范围限制。浏览器发布前检查用于即时提示；GitHub 分支保护负责阻止绕过 PR 的写入，包括 CMS 合并失败时的直接写入回退。
 
 ## 写作与恢复
 
@@ -27,6 +27,24 @@
 新文章优先使用新建。原生复制会沿用 media_id；不要在首次保存时无条件重置，否则此前上传图片的归档目录会改变。
 
 本轮只需部署 Vercel 网站代码，现有 Worker 已支持博客、游记和研究文章的目录参数，不需要重部署图片服务。真实上传服务仍保留现有类型、大小和 Access 限制。
+
+## 页面与外观
+
+「页面与站点」下五个固定文件与正式页面对应：
+
+| 后台项 | 仓库文件 | 正式页面 |
+| --- | --- | --- |
+| 首页 | `src/data/homepage.json` | `/` |
+| 关于 | `src/data/about.json` | `/about` |
+| 近况 | `src/data/now.json` | `/now` |
+| 项目 | `src/data/projects.json` | `/projects` |
+| 站点文案 | `src/data/site.json` | 页脚、元信息等 |
+
+首页区块按列表顺序显示，支持拖动排序和启用开关；旧 `order` 字段只保留兼容，不再排序。正文段落沿用原有纯文本展示。站点域名不开放到后台修改。表单保存和网站构建使用同一份数据校验，拒绝未知字段、重复区块标记和不安全链接。
+
+左下角「外观」支持跟随系统、浅色、深色；设置只存当前浏览器，与公开网站主题独立。预览和帮助同步切换，图片保持原色。深色适配固定 Decap 3.17.3 调色板；升级 CMS 时要重新检查工具栏、弹窗、状态色与手机界面。
+
+页面改动也先保存草稿，在工作流中审核再发布。不要把敏感信息写入公开仓库的页面草稿。
 
 ## 导入本地草稿
 

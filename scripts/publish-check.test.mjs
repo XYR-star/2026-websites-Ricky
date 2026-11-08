@@ -31,7 +31,7 @@ function mockGitHub(...responses) {
   return calls;
 }
 
-for (const collection of ["blog", "travel"]) {
+for (const collection of ["blog", "travel", "research"]) {
   test(`prePublish accepts one ${collection} article plus historical images`, async () => {
     const calls = mockGitHub([pull(collection)], {
       files: [file(article(collection)), file("public/images/cms-trial/old-cover.png", "added")],
@@ -49,6 +49,19 @@ for (const collection of ["blog", "travel"]) {
   });
 }
 
+for (const name of ["homepage", "about", "now", "projects", "site"]) {
+  for (const status of ["added", "modified"]) {
+    test(`prePublish accepts ${status} of the fixed ${name} page JSON`, async () => {
+      const value = pull("pages");
+      value.head.ref = `cms/pages/${name}`;
+      const calls = mockGitHub([value], { files: [file(`src/data/${name}.json`, status)] });
+      await checkArticlePublication({ entry: entry("pages", name) });
+      assert.equal(calls.length, 2);
+      assert.equal(new URL(calls[0].url).searchParams.get("head"), `XYR-star:cms/pages/${name}`);
+    });
+  }
+}
+
 test("older trial loaders retain their existing export", () => {
   assert.equal(checkTravelPublication, checkArticlePublication);
 });
@@ -61,10 +74,18 @@ test("explicit preview environment remains isolated from production", async () =
 
 test("rejects unsupported collections, branch and unsafe slugs before any request", async () => {
   const calls = mockGitHub();
-  await assert.rejects(checkArticlePublication({ entry: entry("research") }));
+  await assert.rejects(checkArticlePublication({ entry: entry("unknown") }));
   await assert.rejects(checkArticlePublication({ entry: entry() }, "release"));
   for (const invalid of ["", ".", "..", "../other", "a/b", "a\\b", ".hidden", "a..b", "a.", "a.lock", "a b", "a\u0000b", "a\u007fb", "a~b", "a^b", "a:b", "a?b", "a*b", "a[b", "a@{b"]) {
     await assert.rejects(checkArticlePublication({ entry: entry("blog", invalid) }), undefined, JSON.stringify(invalid));
+  }
+  assert.equal(calls.length, 0);
+});
+
+test("prePublish requires an exact fixed page entry name, not a path or JSON filename", async () => {
+  const calls = mockGitHub();
+  for (const name of ["unknown", "homepage.json", "src/data/homepage.json", "../homepage", "constructor", "__proto__", ""]) {
+    await assert.rejects(checkArticlePublication({ entry: entry("pages", name) }), undefined, name);
   }
   assert.equal(calls.length, 0);
 });
@@ -98,7 +119,8 @@ test("prePublish rejects missing saved draft PR", async () => {
 const invalidFiles = [
   ["other article", [file(article("blog")), file("src/content/blog/other.md")]],
   ["other collection", [file(article("blog")), file(article("travel"))]],
-  ["research article", [file(article("blog")), file(article("research"))]],
+  ["second research article in a blog PR", [file(article("blog")), file(article("research"))]],
+  ["fixed page file", [file(article("blog")), file("src/data/homepage.json")]],
   ["configuration", [file(article("blog")), file("public/admin/config.yml")]],
   ["article deletion", [file(article("blog"), "removed")]],
   ["article rename", [file(article("blog"), "renamed")]],
@@ -114,6 +136,38 @@ for (const [label, files] of invalidFiles) {
   test(`prePublish rejects ${label}`, async () => {
     mockGitHub([pull()], { files });
     await assert.rejects(checkArticlePublication({ entry: entry() }), /其他文件/);
+  });
+}
+
+const invalidPageFiles = [
+  ["different fixed page JSON", [file("src/data/about.json")]],
+  ["second fixed page JSON", [file("src/data/homepage.json"), file("src/data/about.json")]],
+  ["adjacent configuration JSON", [file("src/data/homepage.json"), file("src/data/config.json")]],
+  ["CMS configuration", [file("src/data/homepage.json"), file("public/admin/config.yml")]],
+  ["article alongside page JSON", [file("src/data/homepage.json"), file(article("blog"))]],
+  ["historical image alongside page JSON", [file("src/data/homepage.json"), file("public/images/cms-trial/old.jpg", "added")]],
+  ["page deletion", [file("src/data/homepage.json", "removed")]],
+  ["page rename", [file("src/data/homepage.json", "renamed")]],
+  ["empty page diff", []],
+];
+
+for (const [label, files] of invalidPageFiles) {
+  test(`prePublish rejects ${label}`, async () => {
+    const value = pull("pages");
+    value.head.ref = "cms/pages/homepage";
+    mockGitHub([value], { files });
+    await assert.rejects(checkArticlePublication({ entry: entry("pages", "homepage") }), /其他文件/);
+  });
+}
+
+for (const [label, mutate] of invalidPulls) {
+  test(`prePublish rejects a page PR with ${label}`, async () => {
+    const value = pull("pages");
+    value.head.ref = "cms/pages/homepage";
+    mutate(value);
+    const calls = mockGitHub([value]);
+    await assert.rejects(checkArticlePublication({ entry: entry("pages", "homepage") }), /先保存草稿/);
+    assert.equal(calls.length, 1);
   });
 }
 

@@ -3,6 +3,14 @@ import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+const pageFiles = new Map([
+  ["homepage", "src/data/homepage.json"],
+  ["about", "src/data/about.json"],
+  ["now", "src/data/now.json"],
+  ["projects", "src/data/projects.json"],
+  ["site", "src/data/site.json"],
+]);
+
 function validSlug(slug) {
   return typeof slug === "string" && slug.length > 0 &&
     !slug.startsWith(".") && !slug.endsWith(".") && !/\.lock$/i.test(slug) &&
@@ -13,16 +21,18 @@ function validSlug(slug) {
 export function validateCMSChanges({ headRef, baseRef, sameRepository, changes }) {
   if (typeof headRef !== "string") throw new Error("Invalid CMS branch reference.");
   if (!headRef.startsWith("cms/")) return;
-  const match = /^cms\/(blog|travel)\/(.+)$/.exec(headRef);
+  const match = /^cms\/(blog|travel|research|pages)\/(.+)$/.exec(headRef);
   if (sameRepository !== true || baseRef !== "main" || !match || !validSlug(match[2])) {
-    throw new Error("CMS pull requests must belong to this repository and target a blog or travel article on main.");
+    throw new Error("CMS pull requests must belong to this repository and target an allowed content entry on main.");
   }
-  const article = `src/content/${match[1]}/${match[2]}.md`;
+  const isPage = match[1] === "pages";
+  const contentFile = isPage ? pageFiles.get(match[2]) : `src/content/${match[1]}/${match[2]}.md`;
+  if (!contentFile) throw new Error("Unknown CMS page entry.");
   const historicalImage = /^public\/images\/cms-trial\/[a-zA-Z0-9_-]+\.(?:jpg|jpeg|png|webp|gif|avif)$/i;
-  if (!Array.isArray(changes) || !changes.some(({ path }) => path === article) || changes.some(({ status, path, mode }) =>
+  if (!Array.isArray(changes) || !changes.some(({ path }) => path === contentFile) || changes.some(({ status, path, mode }) =>
     !["A", "M"].includes(status) || mode !== "100644" ||
-    (path !== article && !historicalImage.test(path)))) {
-    throw new Error("A CMS pull request may only add or update its own article and historical CMS images.");
+    (path !== contentFile && (isPage || !historicalImage.test(path))))) {
+    throw new Error("A CMS pull request may only add or update its own content file (plus historical CMS images for articles).");
   }
 }
 

@@ -6,10 +6,12 @@ on:
     paths:
       - public/admin/**
       - public/cms-trial/**
-      - scripts/*cms*
-      - scripts/*preview*
-      - scripts/publish-check*
+      - scripts/*.test.mjs
+      - scripts/check-cms-changes.mjs
       - src/content.config.ts
+      - src/data/**
+      - src/lib/**
+      - src/pages/**
       - package.json
       - package-lock.json
       - .github/workflows/cms-tests.yml
@@ -18,10 +20,12 @@ on:
     paths:
       - public/admin/**
       - public/cms-trial/**
-      - scripts/*cms*
-      - scripts/*preview*
-      - scripts/publish-check*
+      - scripts/*.test.mjs
+      - scripts/check-cms-changes.mjs
       - src/content.config.ts
+      - src/data/**
+      - src/lib/**
+      - src/pages/**
       - package.json
       - package-lock.json
       - .github/workflows/cms-tests.yml

@@ -3,6 +3,45 @@ function textField(entry, name) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+export function plainPreviewData(value) {
+  return typeof value?.toJS === "function" ? value.toJS() : value;
+}
+
+export function previewTheme(host = window) {
+  const theme = host.document?.documentElement?.dataset?.editorTheme;
+  if (theme === "dark" || theme === "light") return theme;
+  try { return host.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light"; }
+  catch { return "light"; }
+}
+
+// Templates render in an iframe; theme events originate in the host editor.
+export function previewThemeLifecycle(host = window) {
+  return {
+    getInitialState() { return { editorTheme: previewTheme(host) }; },
+    componentDidMount() {
+      this.editorThemeListener = () => this.setState({ editorTheme: previewTheme(host) });
+      host.addEventListener?.("ricky:editor-theme", this.editorThemeListener);
+      this.editorThemeListener();
+    },
+    componentWillUnmount() {
+      host.removeEventListener?.("ricky:editor-theme", this.editorThemeListener);
+    },
+  };
+}
+
+export function safePreviewLink(value, validator, { webOnly = false } = {}) {
+  if (typeof value !== "string" || !value || value.trim() !== value || /[\s\\\u0000-\u001f\u007f-\u009f]/.test(value)) return false;
+  try {
+    const decoded = decodeURIComponent(value);
+    if (/[\\\u0000-\u001f\u007f-\u009f]/.test(decoded) || value.startsWith("//") || decoded.startsWith("//")) return false;
+    if (webOnly ? !/^https?:\/\//i.test(value) : !/^(?:https?:\/\/|mailto:|\/(?!\/)|#)/i.test(value)) return false;
+    const url = new URL(value, "https://www.heyrickishere.com");
+    if (!["https:", "http:", "mailto:"].includes(url.protocol) || url.username || url.password) return false;
+    if (url.protocol === "mailto:" && url.pathname.startsWith("//")) return false;
+    return typeof validator !== "function" || validator(value) === true;
+  } catch { return false; }
+}
+
 function dateField(entry) {
   const value = entry.getIn(["data", "date"]);
   if (!value) return { label: "尚未填写日期" };
@@ -47,20 +86,24 @@ function imageSource(asset) {
   return "";
 }
 
-export function registerArticlePreview(CMS) {
+export function registerArticlePreview(CMS, { isSafeLink } = {}) {
   const { createClass, h } = window;
-  const createPreview = ({ label, requiredCover, showTags }) => createClass({
+  const createPreview = ({ label, requiredCover, showTags, research = false }) => createClass({
+    ...previewThemeLifecycle(window),
     render() {
       const { entry, getAsset, widgetFor } = this.props;
       const title = textField(entry, "title");
-      const description = textField(entry, "description");
+      const description = textField(entry, research ? "summary" : "description");
       const date = dateField(entry);
-      const cover = textField(entry, "cover");
+      const cover = research ? "" : textField(entry, "cover");
       const body = textField(entry, "body");
-      const tags = showTags ? tagsField(entry) : [];
+      const tags = research ? [...new Set([textField(entry, "project"), textField(entry, "status")].filter(Boolean))]
+        : showTags ? tagsField(entry) : [];
+      const rawLinks = plainPreviewData(entry.getIn(["data", "links"]));
+      const links = research && Array.isArray(rawLinks) ? rawLinks.filter((link) => link && typeof link === "object") : [];
       const image = cover ? imageSource(getAsset(cover)) : "";
 
-      return h("article", { className: "article-preview" },
+      return h("article", { className: "article-preview", "data-editor-theme": this.state?.editorTheme ?? previewTheme(window) },
         h("header", { className: "article-preview__header" },
           h("p", { className: "article-preview__kicker" }, label + " · 文章预览"),
           h("h1", null, title || "未命名" + label),
@@ -68,7 +111,7 @@ export function registerArticlePreview(CMS) {
             h("p", { className: "article-preview__date" },
               date.dateTime ? h("time", { dateTime: date.dateTime }, date.label) : date.label,
             ),
-            tags.length > 0 && h("ul", { className: "article-preview__tags", "aria-label": "文章标签" },
+            tags.length > 0 && h("ul", { className: "article-preview__tags", "aria-label": research ? "研究项目与状态" : "文章标签" },
               ...tags.map((tag) => h("li", { key: tag }, tag)),
             ),
           ),
@@ -84,6 +127,14 @@ export function registerArticlePreview(CMS) {
         h("div", { className: "article-preview__body" },
           body ? widgetFor("body") : h("p", { className: "article-preview__placeholder" }, "开始写正文，右侧会同步预览。"),
         ),
+        links.length > 0 && h("section", { className: "article-preview__resources" },
+          h("h2", null, "相关资料"),
+          h("ul", null, ...links.map((link, index) => h("li", { key: index },
+            safePreviewLink(link.href, isSafeLink, { webOnly: true })
+              ? h("a", { href: link.href, target: "_blank", rel: "noopener noreferrer" }, typeof link.label === "string" && link.label ? link.label : link.href)
+              : h("span", null, (typeof link.label === "string" ? link.label : "资料") + "（链接待检查）"),
+          ))),
+        ),
       );
     },
   });
@@ -91,4 +142,5 @@ export function registerArticlePreview(CMS) {
   CMS.registerPreviewStyle("/cms-trial/article-preview.css");
   CMS.registerPreviewTemplate("travel", createPreview({ label: "游记", requiredCover: true, showTags: false }));
   CMS.registerPreviewTemplate("blog", createPreview({ label: "博客", requiredCover: false, showTags: true }));
+  CMS.registerPreviewTemplate("research", createPreview({ label: "研究日志", requiredCover: false, showTags: false, research: true }));
 }

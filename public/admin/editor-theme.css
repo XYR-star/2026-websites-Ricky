@@ -1,0 +1,189 @@
+:root {
+  --editor-bg: #eff0f4;
+  --editor-surface: #fff;
+  --editor-raised: #e8edf2;
+  --editor-text: #253744;
+  --editor-muted: #5d626f;
+  --editor-line: #cbd8df;
+  --editor-accent: #245f9c;
+  --editor-focus: #1983a8;
+  --editor-code: #f3f5f7;
+  --editor-info-bg: #e8f5fe;
+  --editor-draft-bg: #f6d8ff;
+  --editor-review-bg: #ffee9c;
+  --editor-ready-bg: #caef6f;
+  --editor-danger-bg: #fcefea;
+  --editor-action-bg: #17a2b8;
+  --editor-success: #005614;
+  --editor-warning: #754e00;
+  --editor-danger: #d60032;
+  --editor-draft: #70399f;
+}
+
+html[data-editor-theme="dark"] {
+  color-scheme: dark;
+  --editor-bg: #141a22;
+  --editor-surface: #1c2530;
+  --editor-raised: #293543;
+  --editor-text: #e5edf5;
+  --editor-muted: #b0bfce;
+  --editor-line: #455569;
+  --editor-accent: #91c7ff;
+  --editor-focus: #81d8f4;
+  --editor-code: #131b25;
+  --editor-info-bg: #1e3851;
+  --editor-draft-bg: #392c4b;
+  --editor-review-bg: #463c21;
+  --editor-ready-bg: #1d3c2c;
+  --editor-danger-bg: #472832;
+  --editor-action-bg: #126e82;
+  --editor-success: #9ae0ac;
+  --editor-warning: #f5d683;
+  --editor-danger: #ffb1bc;
+  --editor-draft: #dfb6ff;
+}
+
+html[data-editor-theme="dark"],
+html[data-editor-theme="dark"] body {
+  background-color: var(--editor-bg);
+  color: var(--editor-text);
+}
+
+/* The adapter marks only known Decap palette colours inside the CMS UI. */
+html[data-editor-theme="dark"] [data-editor-surface] { background-color: var(--editor-node-bg) !important; }
+html[data-editor-theme="dark"] [data-editor-surface="canvas"] { --editor-node-bg: var(--editor-bg); }
+html[data-editor-theme="dark"] [data-editor-surface="surface"] { --editor-node-bg: var(--editor-surface); }
+html[data-editor-theme="dark"] [data-editor-surface="raised"] { --editor-node-bg: var(--editor-raised); }
+html[data-editor-theme="dark"] [data-editor-surface="info"] { --editor-node-bg: var(--editor-info-bg); }
+html[data-editor-theme="dark"] [data-editor-surface="draft"] { --editor-node-bg: var(--editor-draft-bg); }
+html[data-editor-theme="dark"] [data-editor-surface="review"] { --editor-node-bg: var(--editor-review-bg); }
+html[data-editor-theme="dark"] [data-editor-surface="ready"] { --editor-node-bg: var(--editor-ready-bg); }
+html[data-editor-theme="dark"] [data-editor-surface="danger"] { --editor-node-bg: var(--editor-danger-bg); }
+html[data-editor-theme="dark"] [data-editor-surface="action"] { --editor-node-bg: var(--editor-action-bg); }
+html[data-editor-theme="dark"] [data-editor-ink] { color: var(--editor-node-ink) !important; }
+html[data-editor-theme="dark"] [data-editor-ink="text"] { --editor-node-ink: var(--editor-text); }
+html[data-editor-theme="dark"] [data-editor-ink="muted"] { --editor-node-ink: var(--editor-muted); }
+html[data-editor-theme="dark"] [data-editor-ink="accent"] { --editor-node-ink: var(--editor-accent); }
+html[data-editor-theme="dark"] [data-editor-ink="success"] { --editor-node-ink: var(--editor-success); }
+html[data-editor-theme="dark"] [data-editor-ink="warning"] { --editor-node-ink: var(--editor-warning); }
+html[data-editor-theme="dark"] [data-editor-ink="danger"] { --editor-node-ink: var(--editor-danger); }
+html[data-editor-theme="dark"] [data-editor-ink="draft"] { --editor-node-ink: var(--editor-draft); }
+html[data-editor-theme="dark"] [data-editor-border] { border-color: var(--editor-node-border) !important; }
+html[data-editor-theme="dark"] [data-editor-border="line"] { --editor-node-border: var(--editor-line); }
+html[data-editor-theme="dark"] [data-editor-border="accent"] { --editor-node-border: var(--editor-accent); }
+html[data-editor-theme="dark"] [data-editor-border="danger"] { --editor-node-border: var(--editor-danger); }
+
+html[data-editor-theme-measuring] :is(#nc-root, .ReactModalPortal) * { transition: none !important; }
+
+/* Decap FieldLabel's 4px faux input corner hardcodes a white ::after.
+   Keep ::before inheriting the label's active/error colour; match only the
+   native field-id contract and topbar structure, without Emotion selectors. */
+html[data-editor-theme="dark"] #nc-root [aria-label] > div > label[for*="-field-"]::after {
+  background-color: var(--editor-surface) !important;
+}
+
+html[data-editor-theme="dark"] #nc-root :is(input, textarea, select):not([type="checkbox"]):not([type="radio"]):not([type="range"]) {
+  background-color: var(--editor-surface) !important;
+  color: var(--editor-text) !important;
+  caret-color: var(--editor-text);
+}
+
+html[data-editor-theme="dark"] #nc-root :is(input, textarea)::placeholder { color: var(--editor-muted) !important; opacity: 1; }
+html[data-editor-theme="dark"] #nc-root :is(input, textarea, select)[aria-invalid="true"] { border-color: var(--editor-danger) !important; }
+html[data-editor-theme="dark"] #nc-root :is(input, textarea, select, button, a, [tabindex]):focus-visible {
+  outline: 2px solid var(--editor-focus) !important;
+  outline-offset: 2px;
+}
+html[data-editor-theme="dark"] #nc-root :is(button, [role="menuitem"], [role="option"]):hover { background-color: var(--editor-raised) !important; }
+html[data-editor-theme="dark"] #nc-root :is([role="menu"], [role="listbox"], [role="dialog"]) {
+  background-color: var(--editor-surface) !important;
+  color: var(--editor-text) !important;
+  border-color: var(--editor-line) !important;
+}
+html[data-editor-theme="dark"] #nc-root :is([role="option"][aria-selected="true"], [role="menuitem"]:focus, [aria-pressed="true"]) {
+  background-color: var(--editor-info-bg) !important;
+  color: var(--editor-accent) !important;
+}
+html[data-editor-theme="dark"] #nc-root button:disabled { color: var(--editor-muted) !important; }
+html[data-editor-theme="dark"] #nc-root [role="switch"] span:first-child { background-color: var(--editor-accent) !important; }
+html[data-editor-theme="dark"] #nc-root [role="switch"] span:last-child { background-color: #e5edf5 !important; }
+
+/* Stable classes and Slate attributes, not Emotion output or entry contents. */
+html[data-editor-theme="dark"] #nc-root :is(.cms-editor-visual, .cms-editor-raw, [data-slate-editor]) {
+  background-color: var(--editor-surface) !important;
+  color: var(--editor-text) !important;
+  caret-color: var(--editor-text);
+}
+html[data-editor-theme="dark"] #nc-root [data-slate-placeholder] { color: var(--editor-muted) !important; }
+html[data-editor-theme="dark"] #nc-root [data-slate-editor] a { color: var(--editor-accent) !important; }
+html[data-editor-theme="dark"] #nc-root [data-slate-editor] :is(pre, code) {
+  background-color: var(--editor-code) !important;
+  color: var(--editor-text) !important;
+  border-color: var(--editor-line) !important;
+}
+html[data-editor-theme="dark"] #nc-root .CodeMirror {
+  background: var(--editor-code) !important;
+  color: var(--editor-text) !important;
+}
+html[data-editor-theme="dark"] #nc-root .CodeMirror-gutters { background: var(--editor-bg) !important; border-color: var(--editor-line) !important; }
+html[data-editor-theme="dark"] #nc-root .CodeMirror-linenumber { color: #9babbd !important; }
+html[data-editor-theme="dark"] #nc-root .CodeMirror-cursor { border-left-color: var(--editor-text) !important; }
+html[data-editor-theme="dark"] #nc-root .CodeMirror-selected { background: #334c67 !important; }
+html[data-editor-theme="dark"] #nc-root .CodeMirror-activeline-background { background: #202e3d !important; }
+html[data-editor-theme="dark"] #nc-root .CodeMirror :is(.cm-keyword, .cm-atom) { color: #cbb3ff !important; }
+html[data-editor-theme="dark"] #nc-root .CodeMirror :is(.cm-string, .cm-string-2) { color: #a8dbab !important; }
+html[data-editor-theme="dark"] #nc-root .CodeMirror :is(.cm-number, .cm-attribute) { color: #f2c58c !important; }
+html[data-editor-theme="dark"] #nc-root .CodeMirror :is(.cm-comment, .cm-meta) { color: #a6b5c6 !important; }
+html[data-editor-theme="dark"] #nc-root .CodeMirror :is(.cm-variable, .cm-variable-2, .cm-variable-3, .cm-def, .cm-property, .cm-operator, .cm-tag, .cm-bracket) { color: #a8d8ff !important; }
+html[data-editor-theme="dark"] #nc-root .CodeMirror .cm-error { color: var(--editor-danger) !important; background: transparent !important; }
+html[data-editor-theme="dark"] #nc-root .Resizer::before { background-color: var(--editor-line) !important; }
+html[data-editor-theme="dark"] .ReactModal__Content { background-color: var(--editor-surface) !important; color: var(--editor-text) !important; }
+
+#editor-theme-control {
+  position: fixed;
+  left: max(0.75rem, env(safe-area-inset-left));
+  bottom: max(0.75rem, env(safe-area-inset-bottom));
+  z-index: 150;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 46px;
+  max-width: calc(100vw - 9rem);
+  padding: 0 0.65rem;
+  border: 1px solid var(--editor-line);
+  border-radius: 0.7rem;
+  background: var(--editor-surface);
+  color: var(--editor-text);
+  box-shadow: 0 3px 16px #0002;
+  font: 0.8rem/1.5 system-ui, -apple-system, "PingFang SC", sans-serif;
+}
+#editor-theme-control label { white-space: nowrap; }
+#editor-theme-control::after {
+  content: "";
+  position: absolute;
+  right: 0.8rem;
+  width: 0.4rem;
+  height: 0.4rem;
+  margin-top: -0.2rem;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+#editor-theme-control select {
+  /* Safari's native menulist capsule ignores min-height and some box styling. */
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  min-width: 0;
+  height: 44px;
+  min-height: 44px;
+  border: 0;
+  border-radius: 0.4rem;
+  padding: 0.35rem 1.4rem 0.35rem 0.2rem;
+  background: var(--editor-surface);
+  color: var(--editor-text);
+  font: inherit;
+  cursor: pointer;
+}
+#editor-theme-control select:focus-visible { outline: 2px solid var(--editor-focus); outline-offset: -2px; border-radius: 0.3rem; }

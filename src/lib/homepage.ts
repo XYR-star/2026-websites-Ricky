@@ -34,7 +34,7 @@ export type HomepageSectionBase = {
   id: string;
   type: HomepageSectionType;
   enabled: boolean;
-  order: number;
+  order?: number;
   eyebrow?: string;
   title?: string;
   linkLabel?: string;
@@ -86,9 +86,8 @@ export type HomepageContent = {
 };
 
 export function getOrderedHomepageSections(sections: HomepageSection[]) {
-  return [...sections]
-    .filter((section) => section.enabled)
-    .sort((a, b) => a.order - b.order);
+  // The CMS list order is the display order, including after dragging sections.
+  return sections.filter((section) => section.enabled);
 }
 
 export function getHomepageSectionLabel(section: HomepageSection) {

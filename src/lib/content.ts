@@ -58,7 +58,7 @@ export function getVisibleTravelPosts(posts: CollectionEntry<"travel">[]) {
 }
 
 export function getVisibleResearchEntries(items: CollectionEntry<"research">[]) {
-  return sortByDateDesc(items);
+  return sortByDateDesc(items.filter((item) => !item.data.draft));
 }
 
 export function stripMarkdown(source: string) {

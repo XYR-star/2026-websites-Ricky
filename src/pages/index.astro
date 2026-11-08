@@ -5,6 +5,7 @@ import ResearchCard from "../components/ResearchCard.astro";
 import TravelCard from "../components/TravelCard.astro";
 import SiteLayout from "../layouts/SiteLayout.astro";
 import homepageData from "../data/homepage.json";
+import { validatePageData } from "../lib/page-data.mjs";
 import { siteMeta } from "../data/site";
 import {
   getHomepageSectionLabel,
@@ -15,11 +16,11 @@ import {
   type HomepageQuoteSection,
   type HomepageSection,
 } from "../lib/homepage";
-import { getVisiblePosts, getVisibleTravelPosts, sortByDateDesc } from "../lib/content";
+import { getVisiblePosts, getVisibleTravelPosts, getVisibleResearchEntries } from "../lib/content";
 
-const homepage = homepageData as HomepageContent;
+const homepage = validatePageData("homepage", homepageData) as HomepageContent;
 const posts = getVisiblePosts(await getCollection("blog"));
-const research = sortByDateDesc(await getCollection("research"));
+const research = getVisibleResearchEntries(await getCollection("research"));
 const travel = getVisibleTravelPosts(await getCollection("travel"));
 const blankLine = "\u00A0";
 

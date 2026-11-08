@@ -1,5 +1,13 @@
 const REPO = "XYR-star/2026-websites-Ricky";
 const API = "https://api.github.com/repos/" + REPO;
+const articleCollections = new Set(["blog", "travel", "research"]);
+const pageFiles = new Map([
+  ["homepage", "src/data/homepage.json"],
+  ["about", "src/data/about.json"],
+  ["now", "src/data/now.json"],
+  ["projects", "src/data/projects.json"],
+  ["site", "src/data/site.json"],
+]);
 
 function validSlug(slug) {
   return typeof slug === "string" && slug.length > 0 &&
@@ -24,8 +32,10 @@ export async function checkArticlePublication({ entry }, branch = "main") {
   }
   const collection = entry.get("collection");
   const slug = entry.get("slug");
-  if (!["blog", "travel"].includes(collection) || !validSlug(slug)) {
-    throw new Error("无法核对这篇文章的草稿路径。");
+  const isPage = collection === "pages";
+  const contentFile = isPage ? pageFiles.get(slug) : articleCollections.has(collection) ? `src/content/${collection}/${slug}.md` : null;
+  if (!contentFile || !validSlug(slug)) {
+    throw new Error("无法核对这项内容的草稿路径。");
   }
   const headRef = "cms/" + collection + "/" + slug;
   const query = new URLSearchParams({ state: "open", base: branch, head: "XYR-star:" + headRef });
@@ -40,11 +50,10 @@ export async function checkArticlePublication({ entry }, branch = "main") {
   }
   const comparison = await github("/compare/" + pull.base.sha + "..." + pull.head.sha + "?per_page=1");
   const files = comparison.files;
-  const article = `src/content/${collection}/${slug}.md`;
-  if (!Array.isArray(files) || files.length >= 300 || !files.some((file) => file.filename === article) ||
+  if (!Array.isArray(files) || files.length >= 300 || !files.some((file) => file.filename === contentFile) ||
       files.some(({ filename, status }) => !["added", "modified"].includes(status) ||
-        (filename !== article && !/^public\/images\/cms-trial\/[a-zA-Z0-9_-]+\.(?:jpg|jpeg|png|webp|gif|avif)$/i.test(filename)))) {
-    throw new Error("此草稿还包含站点配置或其他文件。请先在 GitHub 核对 PR，再发布。");
+        (filename !== contentFile && (isPage || !/^public\/images\/cms-trial\/[a-zA-Z0-9_-]+\.(?:jpg|jpeg|png|webp|gif|avif)$/i.test(filename))))) {
+    throw new Error("此草稿包含当前编辑范围之外的其他文件。请先在 GitHub 核对 PR，再发布。");
   }
 }
 

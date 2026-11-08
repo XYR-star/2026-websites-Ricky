@@ -1,6 +1,7 @@
 ---
 import SiteLayout from "../layouts/SiteLayout.astro";
 import aboutData from "../data/about.json";
+import { validatePageData } from "../lib/page-data.mjs";
 
 type AboutContent = {
   hero: {
@@ -29,7 +30,7 @@ type AboutContent = {
   }>;
 };
 
-const about = aboutData as AboutContent;
+const about = validatePageData("about", aboutData) as AboutContent;
 const blankLine = "\u00A0";
 ---
 
