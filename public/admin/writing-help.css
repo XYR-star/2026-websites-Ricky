@@ -2,7 +2,8 @@
   position: fixed;
   right: max(1rem, env(safe-area-inset-right));
   bottom: max(0.75rem, env(safe-area-inset-bottom));
-  z-index: 100;
+  /* Above Decap's editor (100), below its toolbar (200), menus (299), and modals. */
+  z-index: 150;
   color: #253744;
   font: 0.875rem/1.65 system-ui, -apple-system, "PingFang SC", sans-serif;
 }
