@@ -18,7 +18,7 @@ const publication = (overrides = {}) => ({
   ...overrides,
 });
 
-for (const collection of ["blog", "travel"]) {
+for (const collection of ["blog", "travel", "research"]) {
   for (const status of ["A", "M"]) {
     test(`accepts ${status} of one ${collection} article with historical CMS images`, () => {
       assert.doesNotThrow(() => validateCMSChanges(publication({
@@ -33,7 +33,7 @@ const rejected = [
   ["another article", { changes: [change(), change("src/content/blog/other.md")] }],
   ["another collection", { changes: [change(), change(article("travel"))] }],
   ["site configuration", { changes: [change(), change("public/admin/config.yml")] }],
-  ["research article", { headRef: `cms/research/${slug}`, changes: [change(article("research"))] }],
+  ["unsupported collection", { headRef: `cms/unknown/${slug}`, changes: [change("src/content/unknown/entry.md")] }],
   ["article deletion", { changes: [change(article(), "D")] }],
   ["article rename", { changes: [change(article(), "R100")] }],
   ["image deletion", { changes: [change(), change("public/images/cms-trial/old.jpg", "D")] }],
@@ -59,6 +59,60 @@ for (const [label, overrides] of rejected) {
   });
 }
 
+const pages = new Map([
+  ["homepage", "src/data/homepage.json"],
+  ["about", "src/data/about.json"],
+  ["now", "src/data/now.json"],
+  ["projects", "src/data/projects.json"],
+  ["site", "src/data/site.json"],
+]);
+
+for (const [name, path] of pages) {
+  for (const status of ["A", "M"]) {
+    test(`accepts ${status} of the fixed ${name} page JSON`, () => {
+      assert.doesNotThrow(() => validateCMSChanges(publication({
+        headRef: `cms/pages/${name}`, changes: [change(path, status)],
+      })));
+    });
+  }
+}
+
+const pagePublication = (overrides = {}) => publication({
+  headRef: "cms/pages/homepage", changes: [change("src/data/homepage.json")], ...overrides,
+});
+
+const rejectedPages = [
+  ["other page JSON", { changes: [change("src/data/about.json")] }],
+  ["second page JSON", { changes: [change("src/data/homepage.json"), change("src/data/about.json")] }],
+  ["adjacent site configuration", { changes: [change("src/data/homepage.json"), change("src/data/config.json")] }],
+  ["CMS configuration", { changes: [change("src/data/homepage.json"), change("public/admin/config.yml")] }],
+  ["article alongside page", { changes: [change("src/data/homepage.json"), change()] }],
+  ["historical image alongside page", { changes: [change("src/data/homepage.json"), change("public/images/cms-trial/old.jpg", "A")] }],
+  ["page deletion", { changes: [change("src/data/homepage.json", "D")] }],
+  ["page rename", { changes: [change("src/data/homepage.json", "R100")] }],
+  ["page symlink", { changes: [change("src/data/homepage.json", "M", "120000")] }],
+  ["executable page", { changes: [change("src/data/homepage.json", "M", "100755")] }],
+  ["empty page diff", { changes: [] }],
+  ["foreign repository page", { sameRepository: false }],
+  ["wrong base page", { baseRef: "release" }],
+];
+
+for (const [label, overrides] of rejectedPages) {
+  test(`rejects ${label}`, () => {
+    assert.throws(() => validateCMSChanges(pagePublication(overrides)));
+  });
+}
+
+for (const name of ["unknown", "homepage.json", "src/data/homepage.json", "../homepage", "constructor", "__proto__", ""]) {
+  test(`rejects non-allowlisted page slug ${JSON.stringify(name)}`, () => {
+    assert.throws(() => validateCMSChanges(pagePublication({ headRef: `cms/pages/${name}` })));
+  });
+}
+
+test("rejects a fixed page file in an article PR", () => {
+  assert.throws(() => validateCMSChanges(publication({ changes: [change(), change("src/data/homepage.json")] })));
+});
+
 for (const invalid of [".", "..", "../other", "a/b", "a\\b", ".hidden", "a..b", "a.", "a.lock", "a b", "a\u0000b", "a\u007fb", "a~b", "a^b", "a:b", "a?b", "a*b", "a[b", "a@{b"]) {
   test(`rejects unsafe slug ${JSON.stringify(invalid)}`, () => {
     assert.throws(() => validateCMSChanges(publication({
@@ -82,7 +136,7 @@ test("permits Unicode slugs without accepting traversal or invalid Git refs", ()
 
 const script = fileURLToPath(new URL("./check-cms-changes.mjs", import.meta.url));
 
-function runCLI({ mode = "regular", invalidSha = false } = {}) {
+function runCLI({ mode = "regular", invalidSha = false, page = false } = {}) {
   const directory = mkdtempSync(join(tmpdir(), "ricky-cms-guard-"));
   try {
     const git = (...args) => execFileSync("git", args, { cwd: directory, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
@@ -93,11 +147,11 @@ function runCLI({ mode = "regular", invalidSha = false } = {}) {
     git("add", "README.md");
     git("commit", "-qm", "base");
     const base = git("rev-parse", "HEAD");
-    const target = join(directory, article());
+    const target = join(directory, page ? "src/data/homepage.json" : article());
     mkdirSync(dirname(target), { recursive: true });
     if (mode === "symlink") symlinkSync("../../../README.md", target);
     else {
-      writeFileSync(target, "---\ntitle: Test\n---\nBody\n");
+      writeFileSync(target, page ? '{"title":"Homepage fixture"}\n' : "---\ntitle: Test\n---\nBody\n");
       if (mode === "executable") chmodSync(target, 0o755);
     }
     git("add", ".");
@@ -107,7 +161,7 @@ function runCLI({ mode = "regular", invalidSha = false } = {}) {
     const repo = { full_name: "XYR-star/2026-websites-Ricky" };
     writeFileSync(eventPath, JSON.stringify({ pull_request: {
       base: { ref: "main", sha: base, repo },
-      head: { ref: `cms/blog/${slug}`, sha: invalidSha ? "--bad-ref" : head, repo },
+      head: { ref: page ? "cms/pages/homepage" : `cms/blog/${slug}`, sha: invalidSha ? "--bad-ref" : head, repo },
     } }));
     return spawnSync(process.execPath, [script], {
       cwd: directory,
@@ -129,7 +183,21 @@ for (const mode of ["symlink", "executable"]) {
   test(`CLI rejects actual ${mode} files`, () => {
     const result = runCLI({ mode });
     assert.notEqual(result.status, 0);
-    assert.match(result.stderr, /only add or update its own article/);
+    assert.match(result.stderr, /only add or update its own content file/);
+  });
+}
+
+test("CLI permits the fixed page JSON using its file collection entry name", () => {
+  const result = runCLI({ page: true });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /CMS content changes passed/);
+});
+
+for (const mode of ["symlink", "executable"]) {
+  test(`CLI rejects an actual ${mode} page JSON`, () => {
+    const result = runCLI({ mode, page: true });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /only add or update its own content file/);
   });
 }
 

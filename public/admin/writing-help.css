@@ -4,17 +4,17 @@
   bottom: max(0.75rem, env(safe-area-inset-bottom));
   /* Above Decap's editor (100), below its toolbar (200), menus (299), and modals. */
   z-index: 150;
-  color: #253744;
+  color: var(--editor-text, #253744);
   font: 0.875rem/1.65 system-ui, -apple-system, "PingFang SC", sans-serif;
 }
 
 #writing-help button {
   min-height: 44px;
   padding: 0.5rem 0.9rem;
-  border: 1px solid #cbd8df;
+  border: 1px solid var(--editor-line, #cbd8df);
   border-radius: 0.7rem;
-  background: #fff;
-  color: #24556c;
+  background: var(--editor-surface, #fff);
+  color: var(--editor-accent, #24556c);
   font: inherit;
   font-weight: 650;
   cursor: pointer;
@@ -25,11 +25,11 @@
 }
 
 #writing-help button:hover {
-  background: #edf6fa;
+  background: var(--editor-raised, #edf6fa);
 }
 
 #writing-help button:focus-visible {
-  outline: 3px solid #1983a8;
+  outline: 3px solid var(--editor-focus, #1983a8);
   outline-offset: 3px;
 }
 
@@ -40,10 +40,10 @@
   margin: auto;
   padding: 0;
   overflow: auto;
-  border: 1px solid #d9e3e8;
+  border: 1px solid var(--editor-line, #d9e3e8);
   border-radius: 1.1rem;
-  background: #fff;
-  color: #253744;
+  background: var(--editor-surface, #fff);
+  color: var(--editor-text, #253744);
   box-shadow: 0 24px 80px #17394b40;
 }
 
@@ -57,17 +57,18 @@
   justify-content: space-between;
   gap: 1rem;
   padding: 1.3rem 1.4rem 1rem;
-  border-bottom: 1px solid #e5edf1;
-  background: #f4f9fb;
+  border-bottom: 1px solid var(--editor-line, #e5edf1);
+  background: var(--editor-raised, #f4f9fb);
 }
 
 #writing-help .writing-help__eyebrow {
   margin: 0 0 0.15rem;
-  color: #647b88;
+  color: var(--editor-muted, #647b88);
   font-size: 0.75rem;
 }
 
 #writing-help h2 {
+  color: var(--editor-text, #253744);
   margin: 0;
   font-size: 1.25rem;
   line-height: 1.4;
@@ -85,7 +86,7 @@
 }
 
 #writing-help li::marker {
-  color: #1680a0;
+  color: var(--editor-accent, #1680a0);
   font-weight: 750;
 }
 
@@ -96,31 +97,32 @@
 
 #writing-help li span {
   margin-top: 0.15rem;
-  color: #526a78;
+  color: var(--editor-muted, #526a78);
 }
 
 #writing-help .writing-help__note {
   margin-top: 1.15rem;
   padding-top: 1rem;
-  border-top: 1px solid #e5edf1;
+  border-top: 1px solid var(--editor-line, #e5edf1);
 }
 
 #writing-help h3 {
+  color: var(--editor-text, #253744);
   margin: 0 0 0.25rem;
   font-size: 0.9rem;
 }
 
 #writing-help .writing-help__note p {
   margin: 0;
-  color: #526a78;
+  color: var(--editor-muted, #526a78);
 }
 
 #writing-help .writing-help__privacy {
   margin: 1.15rem 0 0;
   padding: 0.7rem 0.85rem;
   border-radius: 0.6rem;
-  background: #f2f6f8;
-  color: #617783;
+  background: var(--editor-raised, #f2f6f8);
+  color: var(--editor-muted, #617783);
   font-size: 0.8rem;
 }
 

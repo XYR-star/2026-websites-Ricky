@@ -93,3 +93,767 @@ collections:
         widget: uuid
         hint: 自动生成并保持不变，用于归类本篇图片，无需填写。
       - { label: 站点草稿标记, name: draft, widget: hidden, default: false }
+  - name: research
+    label: 研究日志
+    label_singular: 研究记录
+    description: 记录研究进展、问题和阶段性判断。未发布的记录从「工作流」继续编辑；换设备前请先保存。
+    folder: src/content/research
+    create: true
+    delete: false
+    extension: md
+    format: frontmatter
+    slug: '{{date | date(''YYYY-MM-DD'')}}-{{slug}}'
+    preview_path: 'research/{{slug}}/'
+    summary: '{{date | date(''YYYY-MM-DD'')}} · {{title}}'
+    sortable_fields:
+      - field: date
+        label: 日期
+        default_sort: desc
+      - field: title
+        label: 标题
+    view_groups:
+      - label: 年份
+        field: date
+        pattern: '\d{4}'
+    fields:
+      - label: 标题
+        name: title
+        widget: string
+      - label: 日期
+        name: date
+        widget: datetime
+        date_format: YYYY-MM-DD
+        time_format: false
+        format: YYYY-MM-DD
+      - label: 摘要
+        name: summary
+        widget: text
+        hint: 简要说明这次记录的研究问题、进展或结论。
+      - label: 所属项目
+        name: project
+        widget: string
+        required: false
+        default: ''
+      - label: 进展状态
+        name: status
+        widget: string
+        required: false
+        default: ''
+      - label: 相关资料
+        name: links
+        widget: list
+        required: false
+        default: []
+        collapsed: true
+        summary: '{{fields.label}}'
+        fields:
+          - label: 名称
+            name: label
+            widget: string
+          - label: 网页地址
+            name: href
+            widget: string
+            pattern:
+              - '^https?://[^\s\\\x00-\x1f\x7f]+$'
+              - '请填写以 http:// 或 https:// 开头的网页地址。'
+      - label: 正文
+        name: body
+        widget: markdown
+        hint: 支持富文本与 Markdown 切换。换设备前请点保存，等待「修改已保存」。
+      - label: 素材归档（自动）
+        name: media_id
+        widget: uuid
+        hint: 自动生成并保持不变，用于归类本篇图片，无需填写。
+      - label: 站点草稿标记
+        name: draft
+        widget: hidden
+        default: false
+  - name: pages
+    label: 页面与站点
+    label_singular: 页面
+    description: 编辑首页、关于、近况、项目和站点简介。保存后从「工作流」预览并发布。
+    format: json
+    delete: false
+    files:
+      - name: homepage
+        label: 首页
+        file: src/data/homepage.json
+        preview_path: /
+        fields:
+          - label: 首页开场
+            name: hero
+            widget: object
+            fields:
+              - label: 链接标记（自动）
+                name: id
+                widget: uuid
+                prefix: section-
+                hint: 保留当前标记，已有段落链接会继续可用。
+              - label: 小标题
+                name: eyebrow
+                widget: string
+                required: false
+                default: ''
+              - label: 标题
+                name: title
+                widget: string
+              - label: 介绍
+                name: intro
+                widget: text
+                required: false
+                default: ''
+              - label: 补充说明
+                name: note
+                widget: text
+                required: false
+                default: ''
+              - label: 主要链接文字
+                name: primaryLinkLabel
+                widget: string
+                required: false
+                default: ''
+              - label: 主要链接地址
+                name: primaryLinkHref
+                widget: string
+                required: false
+                default: ''
+                pattern:
+                  - >-
+                    ^(?:https?://[^\s\\\x00-\x1f\x7f]+|/(?!/)[^\s\\\x00-\x1f\x7f]*|#[A-Za-z][A-Za-z0-9_-]*|mailto:[^@\s\\]+@[^@\s\\]+\.[^@\s\\]+)?$
+                  - '请填写网页地址、以 / 开头的站内路径、#段落标记或 mailto: 邮箱链接。'
+              - label: 次要链接文字
+                name: secondaryLinkLabel
+                widget: string
+                required: false
+                default: ''
+              - label: 次要链接地址
+                name: secondaryLinkHref
+                widget: string
+                required: false
+                default: ''
+                pattern:
+                  - >-
+                    ^(?:https?://[^\s\\\x00-\x1f\x7f]+|/(?!/)[^\s\\\x00-\x1f\x7f]*|#[A-Za-z][A-Za-z0-9_-]*|mailto:[^@\s\\]+@[^@\s\\]+\.[^@\s\\]+)?$
+                  - '请填写网页地址、以 / 开头的站内路径、#段落标记或 mailto: 邮箱链接。'
+          - label: 首页内容
+            name: sections
+            widget: list
+            typeKey: type
+            collapsed: true
+            summary: '{{fields.title}}'
+            hint: 拖动调整展示顺序；关掉「显示这一块」可暂时隐藏，文字会保留。
+            types:
+              - label: 最新博客
+                name: featuredPosts
+                widget: object
+                summary: '{{fields.title}}'
+                fields:
+                  - label: 链接标记（自动）
+                    name: id
+                    widget: uuid
+                    prefix: section-
+                    hint: 自动生成并保持不变，修改标题不会影响段落链接。
+                  - label: 显示这一块
+                    name: enabled
+                    widget: boolean
+                    default: true
+                  - label: 原排序记录
+                    name: order
+                    widget: hidden
+                    default: 0
+                  - label: 小标题
+                    name: eyebrow
+                    widget: string
+                    required: false
+                    default: ''
+                  - label: 标题
+                    name: title
+                    widget: string
+                    required: false
+                    default: ''
+                  - label: 链接文字
+                    name: linkLabel
+                    widget: string
+                    required: false
+                    default: ''
+                  - label: 链接地址
+                    name: linkHref
+                    widget: string
+                    required: false
+                    default: ''
+                    pattern:
+                      - >-
+                        ^(?:https?://[^\s\\\x00-\x1f\x7f]+|/(?!/)[^\s\\\x00-\x1f\x7f]*|#[A-Za-z][A-Za-z0-9_-]*|mailto:[^@\s\\]+@[^@\s\\]+\.[^@\s\\]+)?$
+                      - '请填写网页地址、以 / 开头的站内路径、#段落标记或 mailto: 邮箱链接。'
+                  - label: 展示篇数
+                    name: count
+                    widget: number
+                    value_type: int
+                    min: 1
+                    max: 12
+                    default: 3
+              - label: 游记列表
+                name: travelList
+                widget: object
+                summary: '{{fields.title}}'
+                fields:
+                  - label: 链接标记（自动）
+                    name: id
+                    widget: uuid
+                    prefix: section-
+                    hint: 自动生成并保持不变，修改标题不会影响段落链接。
+                  - label: 显示这一块
+                    name: enabled
+                    widget: boolean
+                    default: true
+                  - label: 原排序记录
+                    name: order
+                    widget: hidden
+                    default: 0
+                  - label: 小标题
+                    name: eyebrow
+                    widget: string
+                    required: false
+                    default: ''
+                  - label: 标题
+                    name: title
+                    widget: string
+                    required: false
+                    default: ''
+                  - label: 链接文字
+                    name: linkLabel
+                    widget: string
+                    required: false
+                    default: ''
+                  - label: 链接地址
+                    name: linkHref
+                    widget: string
+                    required: false
+                    default: ''
+                    pattern:
+                      - >-
+                        ^(?:https?://[^\s\\\x00-\x1f\x7f]+|/(?!/)[^\s\\\x00-\x1f\x7f]*|#[A-Za-z][A-Za-z0-9_-]*|mailto:[^@\s\\]+@[^@\s\\]+\.[^@\s\\]+)?$
+                      - '请填写网页地址、以 / 开头的站内路径、#段落标记或 mailto: 邮箱链接。'
+                  - label: 展示篇数
+                    name: count
+                    widget: number
+                    value_type: int
+                    min: 1
+                    max: 12
+                    default: 3
+              - label: 研究日志
+                name: researchList
+                widget: object
+                summary: '{{fields.title}}'
+                fields:
+                  - label: 链接标记（自动）
+                    name: id
+                    widget: uuid
+                    prefix: section-
+                    hint: 自动生成并保持不变，修改标题不会影响段落链接。
+                  - label: 显示这一块
+                    name: enabled
+                    widget: boolean
+                    default: true
+                  - label: 原排序记录
+                    name: order
+                    widget: hidden
+                    default: 0
+                  - label: 小标题
+                    name: eyebrow
+                    widget: string
+                    required: false
+                    default: ''
+                  - label: 标题
+                    name: title
+                    widget: string
+                    required: false
+                    default: ''
+                  - label: 链接文字
+                    name: linkLabel
+                    widget: string
+                    required: false
+                    default: ''
+                  - label: 链接地址
+                    name: linkHref
+                    widget: string
+                    required: false
+                    default: ''
+                    pattern:
+                      - >-
+                        ^(?:https?://[^\s\\\x00-\x1f\x7f]+|/(?!/)[^\s\\\x00-\x1f\x7f]*|#[A-Za-z][A-Za-z0-9_-]*|mailto:[^@\s\\]+@[^@\s\\]+\.[^@\s\\]+)?$
+                      - '请填写网页地址、以 / 开头的站内路径、#段落标记或 mailto: 邮箱链接。'
+                  - label: 展示篇数
+                    name: count
+                    widget: number
+                    value_type: int
+                    min: 1
+                    max: 12
+                    default: 3
+              - label: 推荐内容
+                name: curatedLinks
+                widget: object
+                summary: '{{fields.title}}'
+                fields:
+                  - label: 链接标记（自动）
+                    name: id
+                    widget: uuid
+                    prefix: section-
+                    hint: 自动生成并保持不变，修改标题不会影响段落链接。
+                  - label: 显示这一块
+                    name: enabled
+                    widget: boolean
+                    default: true
+                  - label: 原排序记录
+                    name: order
+                    widget: hidden
+                    default: 0
+                  - label: 小标题
+                    name: eyebrow
+                    widget: string
+                    required: false
+                    default: ''
+                  - label: 标题
+                    name: title
+                    widget: string
+                    required: false
+                    default: ''
+                  - label: 链接文字
+                    name: linkLabel
+                    widget: string
+                    required: false
+                    default: ''
+                  - label: 链接地址
+                    name: linkHref
+                    widget: string
+                    required: false
+                    default: ''
+                    pattern:
+                      - >-
+                        ^(?:https?://[^\s\\\x00-\x1f\x7f]+|/(?!/)[^\s\\\x00-\x1f\x7f]*|#[A-Za-z][A-Za-z0-9_-]*|mailto:[^@\s\\]+@[^@\s\\]+\.[^@\s\\]+)?$
+                      - '请填写网页地址、以 / 开头的站内路径、#段落标记或 mailto: 邮箱链接。'
+                  - label: 介绍
+                    name: body
+                    widget: text
+                    required: false
+                    default: ''
+                  - label: 推荐条目
+                    name: items
+                    widget: list
+                    collapsed: true
+                    summary: '{{fields.title}}'
+                    default: []
+                    fields:
+                      - label: 小标题
+                        name: eyebrow
+                        widget: string
+                        required: false
+                        default: ''
+                      - label: 标题
+                        name: title
+                        widget: string
+                      - label: 简介
+                        name: description
+                        widget: text
+                      - label: 地址
+                        name: href
+                        widget: string
+                        pattern:
+                          - >-
+                            ^(?:https?://[^\s\\\x00-\x1f\x7f]+|/(?!/)[^\s\\\x00-\x1f\x7f]*|#[A-Za-z][A-Za-z0-9_-]*|mailto:[^@\s\\]+@[^@\s\\]+\.[^@\s\\]+)$
+                          - '请填写网页地址、以 / 开头的站内路径、#段落标记或 mailto: 邮箱链接。'
+              - label: 近况摘要
+                name: nowSummary
+                widget: object
+                summary: '{{fields.title}}'
+                fields:
+                  - label: 链接标记（自动）
+                    name: id
+                    widget: uuid
+                    prefix: section-
+                    hint: 自动生成并保持不变，修改标题不会影响段落链接。
+                  - label: 显示这一块
+                    name: enabled
+                    widget: boolean
+                    default: true
+                  - label: 原排序记录
+                    name: order
+                    widget: hidden
+                    default: 0
+                  - label: 小标题
+                    name: eyebrow
+                    widget: string
+                    required: false
+                    default: ''
+                  - label: 标题
+                    name: title
+                    widget: string
+                    required: false
+                    default: ''
+                  - label: 链接文字
+                    name: linkLabel
+                    widget: string
+                    required: false
+                    default: ''
+                  - label: 链接地址
+                    name: linkHref
+                    widget: string
+                    required: false
+                    default: ''
+                    pattern:
+                      - >-
+                        ^(?:https?://[^\s\\\x00-\x1f\x7f]+|/(?!/)[^\s\\\x00-\x1f\x7f]*|#[A-Za-z][A-Za-z0-9_-]*|mailto:[^@\s\\]+@[^@\s\\]+\.[^@\s\\]+)?$
+                      - '请填写网页地址、以 / 开头的站内路径、#段落标记或 mailto: 邮箱链接。'
+                  - label: 内容
+                    name: body
+                    widget: text
+                    hint: 段落之间空一行。内容按文字段落展示。
+              - label: 关于本站
+                name: aboutNote
+                widget: object
+                summary: '{{fields.title}}'
+                fields:
+                  - label: 链接标记（自动）
+                    name: id
+                    widget: uuid
+                    prefix: section-
+                    hint: 自动生成并保持不变，修改标题不会影响段落链接。
+                  - label: 显示这一块
+                    name: enabled
+                    widget: boolean
+                    default: true
+                  - label: 原排序记录
+                    name: order
+                    widget: hidden
+                    default: 0
+                  - label: 小标题
+                    name: eyebrow
+                    widget: string
+                    required: false
+                    default: ''
+                  - label: 标题
+                    name: title
+                    widget: string
+                    required: false
+                    default: ''
+                  - label: 链接文字
+                    name: linkLabel
+                    widget: string
+                    required: false
+                    default: ''
+                  - label: 链接地址
+                    name: linkHref
+                    widget: string
+                    required: false
+                    default: ''
+                    pattern:
+                      - >-
+                        ^(?:https?://[^\s\\\x00-\x1f\x7f]+|/(?!/)[^\s\\\x00-\x1f\x7f]*|#[A-Za-z][A-Za-z0-9_-]*|mailto:[^@\s\\]+@[^@\s\\]+\.[^@\s\\]+)?$
+                      - '请填写网页地址、以 / 开头的站内路径、#段落标记或 mailto: 邮箱链接。'
+                  - label: 内容
+                    name: body
+                    widget: text
+                    hint: 段落之间空一行。内容按文字段落展示。
+              - label: 引言
+                name: quote
+                widget: object
+                summary: '{{fields.title}}'
+                fields:
+                  - label: 链接标记（自动）
+                    name: id
+                    widget: uuid
+                    prefix: section-
+                    hint: 自动生成并保持不变，修改标题不会影响段落链接。
+                  - label: 显示这一块
+                    name: enabled
+                    widget: boolean
+                    default: true
+                  - label: 原排序记录
+                    name: order
+                    widget: hidden
+                    default: 0
+                  - label: 小标题
+                    name: eyebrow
+                    widget: string
+                    required: false
+                    default: ''
+                  - label: 标题
+                    name: title
+                    widget: string
+                    required: false
+                    default: ''
+                  - label: 链接文字
+                    name: linkLabel
+                    widget: string
+                    required: false
+                    default: ''
+                  - label: 链接地址
+                    name: linkHref
+                    widget: string
+                    required: false
+                    default: ''
+                    pattern:
+                      - >-
+                        ^(?:https?://[^\s\\\x00-\x1f\x7f]+|/(?!/)[^\s\\\x00-\x1f\x7f]*|#[A-Za-z][A-Za-z0-9_-]*|mailto:[^@\s\\]+@[^@\s\\]+\.[^@\s\\]+)?$
+                      - '请填写网页地址、以 / 开头的站内路径、#段落标记或 mailto: 邮箱链接。'
+                  - label: 引言内容
+                    name: quote
+                    widget: text
+              - label: 自由文字
+                name: richText
+                widget: object
+                summary: '{{fields.title}}'
+                fields:
+                  - label: 链接标记（自动）
+                    name: id
+                    widget: uuid
+                    prefix: section-
+                    hint: 自动生成并保持不变，修改标题不会影响段落链接。
+                  - label: 显示这一块
+                    name: enabled
+                    widget: boolean
+                    default: true
+                  - label: 原排序记录
+                    name: order
+                    widget: hidden
+                    default: 0
+                  - label: 小标题
+                    name: eyebrow
+                    widget: string
+                    required: false
+                    default: ''
+                  - label: 标题
+                    name: title
+                    widget: string
+                    required: false
+                    default: ''
+                  - label: 链接文字
+                    name: linkLabel
+                    widget: string
+                    required: false
+                    default: ''
+                  - label: 链接地址
+                    name: linkHref
+                    widget: string
+                    required: false
+                    default: ''
+                    pattern:
+                      - >-
+                        ^(?:https?://[^\s\\\x00-\x1f\x7f]+|/(?!/)[^\s\\\x00-\x1f\x7f]*|#[A-Za-z][A-Za-z0-9_-]*|mailto:[^@\s\\]+@[^@\s\\]+\.[^@\s\\]+)?$
+                      - '请填写网页地址、以 / 开头的站内路径、#段落标记或 mailto: 邮箱链接。'
+                  - label: 内容
+                    name: body
+                    widget: text
+                    hint: 段落之间空一行。内容按文字段落展示。
+      - name: about
+        label: 关于我
+        file: src/data/about.json
+        preview_path: /about/
+        fields:
+          - label: 页头
+            name: hero
+            widget: object
+            fields:
+              - label: 小标题
+                name: eyebrow
+                widget: string
+                required: false
+                default: ''
+              - label: 标题
+                name: title
+                widget: string
+              - label: 介绍
+                name: intro
+                widget: text
+          - label: 自我介绍
+            name: profileCard
+            widget: object
+            fields:
+              - label: 小标题
+                name: sectionLabel
+                widget: string
+                required: false
+                default: ''
+              - label: 标题
+                name: title
+                widget: string
+              - label: 介绍
+                name: body
+                widget: text
+              - label: 补充介绍
+                name: secondaryBody
+                widget: text
+                required: false
+                default: ''
+          - label: 个人信息
+            name: facts
+            widget: object
+            fields:
+              - label: 小标题
+                name: sectionLabel
+                widget: string
+                required: false
+                default: ''
+              - label: 地点标题
+                name: locationLabel
+                widget: string
+                required: false
+                default: ''
+              - label: 地点
+                name: location
+                widget: string
+                required: false
+                default: ''
+              - label: 联系标题
+                name: emailLabel
+                widget: string
+                required: false
+                default: ''
+              - label: 邮箱
+                name: email
+                widget: string
+                required: false
+                default: ''
+                pattern:
+                  - '^(?:[^@\s\\]+@[^@\s\\]+\.[^@\s\\]+)?$'
+                  - 请填写有效邮箱地址，或留空。
+              - label: 主题标题
+                name: topicsLabel
+                widget: string
+                required: false
+                default: ''
+              - label: 关注主题
+                name: topics
+                widget: text
+                required: false
+                default: ''
+          - label: 外部链接
+            name: links
+            widget: list
+            required: false
+            default: []
+            collapsed: true
+            summary: '{{fields.label}}'
+            fields:
+              - label: 名称
+                name: label
+                widget: string
+              - label: 地址
+                name: href
+                widget: string
+                pattern:
+                  - '^(?:https?://[^\s\\\x00-\x1f\x7f]+|mailto:[^@\s\\]+@[^@\s\\]+\.[^@\s\\]+)$'
+                  - '请填写 http(s) 网页地址或 mailto: 邮箱链接。'
+      - name: now
+        label: 最近在做什么
+        file: src/data/now.json
+        preview_path: /now/
+        fields:
+          - label: 小标题
+            name: eyebrow
+            widget: string
+            required: false
+            default: ''
+          - label: 标题
+            name: title
+            widget: string
+          - label: 介绍
+            name: intro
+            widget: text
+          - label: 近况记录
+            name: items
+            widget: list
+            required: false
+            default: []
+            field:
+              label: 记录
+              name: item
+              widget: text
+      - name: projects
+        label: 长期项目
+        file: src/data/projects.json
+        preview_path: /projects/
+        fields:
+          - label: 页头
+            name: hero
+            widget: object
+            fields:
+              - label: 小标题
+                name: eyebrow
+                widget: string
+                required: false
+                default: ''
+              - label: 标题
+                name: title
+                widget: string
+              - label: 介绍
+                name: intro
+                widget: text
+          - label: 项目
+            name: items
+            widget: list
+            collapsed: true
+            summary: '{{fields.title}}'
+            required: false
+            default: []
+            fields:
+              - label: 名称
+                name: title
+                widget: string
+              - label: 状态
+                name: status
+                widget: string
+              - label: 介绍
+                name: description
+                widget: text
+      - name: site
+        label: 站点简介
+        file: src/data/site.json
+        preview_path: /
+        fields:
+          - label: 站点名称
+            name: title
+            widget: string
+          - label: 站点简介
+            name: description
+            widget: text
+          - label: 个人介绍
+            name: intro
+            widget: text
+            required: false
+            default: ''
+          - label: 关于作者
+            name: about
+            widget: text
+            required: false
+            default: ''
+          - label: 联系邮箱
+            name: email
+            widget: string
+            required: false
+            default: ''
+            pattern:
+              - '^(?:[^@\s\\]+@[^@\s\\]+\.[^@\s\\]+)?$'
+              - 请填写有效邮箱地址，或留空。
+          - label: 所在地点
+            name: location
+            widget: string
+            required: false
+            default: ''
+          - label: 个人链接
+            name: socialLinks
+            widget: list
+            required: false
+            default: []
+            collapsed: true
+            summary: '{{fields.label}}'
+            fields:
+              - label: 名称
+                name: label
+                widget: string
+              - label: 地址
+                name: href
+                widget: string
+                pattern:
+                  - '^(?:https?://[^\s\\\x00-\x1f\x7f]+|mailto:[^@\s\\]+@[^@\s\\]+\.[^@\s\\]+)$'
+                  - '请填写 http(s) 网页地址或 mailto: 邮箱链接。'

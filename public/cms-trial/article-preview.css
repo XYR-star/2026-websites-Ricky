@@ -1,14 +1,27 @@
-html,
-body {
+:root {
+  --preview-bg: #f4efe7;
+  --preview-text: #1f1a17;
+}
+
+:root:has(.article-preview[data-editor-theme="dark"], .page-preview[data-editor-theme="dark"]) {
+  color-scheme: dark;
+  --preview-bg: #141a22;
+  --preview-text: #e5edf5;
+}
+
+html, body {
   margin: 0;
-  color: #1f1a17;
-  background: #f4efe7;
+  color: var(--preview-text);
+  background: var(--preview-bg);
 }
 
 .article-preview {
   --preview-muted: #6e6258;
   --preview-accent: #8a3f2d;
   --preview-line: rgba(55, 40, 24, 0.14);
+  --preview-soft: #ede6dc;
+  --preview-card: rgba(255, 251, 246, 0.55);
+  --preview-inline: rgba(138, 63, 45, 0.08);
   --preview-serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
   box-sizing: border-box;
   max-width: 860px;
@@ -17,6 +30,16 @@ body {
   padding: clamp(1rem, 5vw, 3rem);
   overflow-wrap: anywhere;
   font: 1rem/1.65 "Avenir Next", "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  color: var(--preview-text);
+}
+
+.article-preview[data-editor-theme="dark"] {
+  --preview-muted: #b0bfce;
+  --preview-accent: #91c7ff;
+  --preview-line: #455569;
+  --preview-soft: #1c2530;
+  --preview-card: #293543;
+  --preview-inline: #293543;
 }
 
 .article-preview *,
@@ -77,7 +100,7 @@ body {
   border-radius: 999px;
   padding: 0.35rem 0.75rem;
   color: var(--preview-muted);
-  background: rgba(255, 251, 246, 0.55);
+  background: var(--preview-card);
   font-size: 0.88rem;
 }
 
@@ -105,7 +128,7 @@ body {
   aspect-ratio: 16 / 9;
   object-fit: cover;
   border: 1px solid var(--preview-line);
-  background: #ede6dc;
+  background: var(--preview-soft);
 }
 
 .article-preview__body {
@@ -154,7 +177,7 @@ body {
 
 .article-preview__body img {
   border: 1px solid var(--preview-line);
-  background: #ede6dc;
+  background: var(--preview-soft);
 }
 
 .article-preview__body figcaption {
@@ -168,13 +191,13 @@ body {
   margin-inline: 0;
   padding: 0.15rem 1rem;
   border-left: 3px solid var(--preview-accent);
-  background: rgba(138, 63, 45, 0.04);
+  background: var(--preview-inline);
 }
 
 .article-preview__body code {
   padding: 0.12rem 0.32rem;
   border-radius: 0.35rem;
-  background: rgba(138, 63, 45, 0.08);
+  background: var(--preview-inline);
   font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
   font-size: 0.9em;
 }
@@ -191,7 +214,7 @@ body {
   padding: 1rem;
   border: 1px solid var(--preview-line);
   border-radius: 1.25rem;
-  background: #ede6dc;
+  background: var(--preview-soft);
   line-height: 1.6;
   white-space: pre;
   overflow-wrap: normal;
@@ -219,7 +242,7 @@ body {
 }
 
 .article-preview__body th {
-  background: rgba(138, 63, 45, 0.06);
+  background: var(--preview-inline);
 }
 
 .article-preview__body hr {
@@ -230,8 +253,16 @@ body {
 
 .article-preview__placeholder {
   padding: 0.75rem 1rem;
-  border: 1px dashed #d0bfb0;
+  border: 1px dashed var(--preview-line);
   border-radius: 0.65rem;
   color: var(--preview-muted);
   font-size: 0.9rem;
 }
+
+.article-preview__resources {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--preview-line);
+}
+.article-preview__resources h2 { font: 500 1.5rem/1.3 var(--preview-serif); }
+.article-preview__resources a { color: var(--preview-accent); }

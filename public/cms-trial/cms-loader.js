@@ -2,6 +2,8 @@ import { registerArticlePreview } from "./article-preview.js";
 import { checkArticlePublication } from "./publish-check.js";
 import { mountWritingHelp } from "../admin/writing-help.js";
 import { r2MediaLibrary } from "./r2-media.js";
+import { isSafeLink, validateCMSPreSave } from "../admin/data-validation.js";
+import { registerPagePreview } from "../admin/page-preview.js";
 
 export async function startCMS({ configPath, branch }) {
   const statusMessage = document.getElementById("status");
@@ -20,7 +22,21 @@ export async function startCMS({ configPath, branch }) {
     script.crossOrigin = "anonymous";
     script.onload = () => {
       window.CMS.registerMediaLibrary(r2MediaLibrary);
-      registerArticlePreview(window.CMS);
+      registerArticlePreview(window.CMS, { isSafeLink });
+      registerPagePreview(window.CMS, { isSafeLink });
+      window.CMS.registerEventListener({
+        name: "preSave",
+        handler: ({ entry }) => {
+          const collection = entry.get("collection");
+          if (collection !== "pages" && collection !== "research") return;
+          validateCMSPreSave({
+            collection,
+            slug: entry.get("slug"),
+            path: entry.get("path"),
+            data: entry.get("data").toJS(),
+          });
+        },
+      });
       window.CMS.registerEventListener({
         name: "prePublish",
         handler: (event) => checkArticlePublication(event, branch),

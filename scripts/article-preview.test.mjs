@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { registerArticlePreview } from "../public/cms-trial/article-preview.js";
+import { registerArticlePreview, previewThemeLifecycle, safePreviewLink } from "../public/cms-trial/article-preview.js";
 
 const templates = new Map();
 const styles = [];
@@ -37,9 +37,49 @@ function text(tree) {
   return typeof tree === "string" ? tree : tree?.children?.map(text).join("") ?? "";
 }
 
-test("both article types use the shared stylesheet", () => {
-  assert.deepEqual([...templates.keys()].sort(), ["blog", "travel"]);
+test("all three article types use the shared stylesheet", () => {
+  assert.deepEqual([...templates.keys()].sort(), ["blog", "research", "travel"]);
   assert.deepEqual(styles, ["/cms-trial/article-preview.css"]);
+});
+
+test("research previews summary, project/status and safe web resources without a cover", () => {
+  const tree = render("research", {
+    title: "研究记录", summary: "进展摘要", project: "学习系统", status: "进行中", cover: "https://example.com/ignored.jpg",
+    links: { toJS: () => [{ label: "论文", href: "https://example.com/paper" }, { label: "危险", href: "javascript:alert(1)" }, { label: "邮箱", href: "mailto:test@example.com" }] },
+    body: "研究正文",
+  });
+  assert.match(text(tree), /进展摘要/);
+  assert.match(text(tree), /学习系统进行中/);
+  assert.equal(nodes(tree, "img").length, 0);
+  assert.deepEqual(nodes(tree, "a").map((node) => node.props.href), ["https://example.com/paper"]);
+  assert.match(text(tree), /危险（链接待检查）/);
+});
+
+test("theme lifecycle follows the host editor and removes its event listener", () => {
+  const listeners = new Map();
+  const host = {
+    document: { documentElement: { dataset: { editorTheme: "dark" } } },
+    addEventListener: (name, callback) => listeners.set(name, callback),
+    removeEventListener: (name, callback) => { if (listeners.get(name) === callback) listeners.delete(name); },
+  };
+  const hooks = previewThemeLifecycle(host);
+  const component = { ...hooks, setState(patch) { this.state = { ...this.state, ...patch }; } };
+  component.state = component.getInitialState();
+  assert.equal(component.state.editorTheme, "dark");
+  component.componentDidMount();
+  host.document.documentElement.dataset.editorTheme = "light";
+  listeners.get("ricky:editor-theme")();
+  assert.equal(component.state.editorTheme, "light");
+  component.componentWillUnmount();
+  assert.equal(listeners.size, 0);
+});
+
+test("preview links never accept dangerous protocols even if an injected validator does", () => {
+  for (const href of ["javascript:alert(1)", "data:text/html,test", "//evil.example", "/%2fevil.example", "https://user:password@example.com", "https://example.com/%0a"]) {
+    assert.equal(safePreviewLink(href, () => true), false);
+  }
+  for (const href of ["https://example.com", "/about/", "#start-here", "mailto:test@example.com"]) assert.equal(safePreviewLink(href), true);
+  assert.equal(safePreviewLink("https://example.com", () => false), false);
 });
 
 test("a blog needs no cover; travel keeps its required-cover guidance", () => {

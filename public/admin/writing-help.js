@@ -21,6 +21,10 @@ export function mountWritingHelp() {
           <li><strong>发布并等待上线</strong><span>发布后到 Deploys（部署）查看正式分支 main 的 production 部署。成功后打开正式文章核对；草稿分支的预览与正式站分别显示。</span></li>
         </ol>
         <section class="writing-help__note">
+          <h3>编辑页面与切换外观</h3>
+          <p>博客、游记、研究日志按篇管理；首页、关于、近况、项目和站点文案在「页面与站点」中编辑，也先保存草稿再发布。首页区块可拖动排序或暂时关闭。左下角「外观」可切换浅色、深色或跟随系统。</p>
+        </section>
+        <section class="writing-help__note">
           <h3>换手机、换电脑前</h3>
           <p>先保存并确认成功，再到另一台设备打开。两台设备编辑同一篇文章时，先保存一台，再重新打开另一台，避免使用旧内容继续修改。</p>
         </section>

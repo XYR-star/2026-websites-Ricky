@@ -18,13 +18,17 @@ const research = defineCollection({
     title: z.string(),
     date: z.coerce.date(),
     summary: z.string(),
+    draft: z.boolean().default(false),
+    media_id: z.string().uuid().optional(),
     project: z.string().optional(),
     status: z.string().optional(),
     links: z
       .array(
         z.object({
           label: z.string(),
-          href: z.string().url(),
+          href: z.string().url().refine((value) => /^https?:\/\//i.test(value), {
+            message: "研究链接仅支持 http 或 https 地址",
+          }),
         }),
       )
       .default([]),

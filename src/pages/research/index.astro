@@ -2,9 +2,9 @@
 import { getCollection } from "astro:content";
 import ResearchCard from "../../components/ResearchCard.astro";
 import SiteLayout from "../../layouts/SiteLayout.astro";
-import { sortByDateDesc } from "../../lib/content";
+import { getVisibleResearchEntries } from "../../lib/content";
 
-const items = sortByDateDesc(await getCollection("research"));
+const items = getVisibleResearchEntries(await getCollection("research"));
 ---
 
 <SiteLayout title="科研进展 · Ricky" description="阶段性研究更新与项目记录">
