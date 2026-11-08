@@ -1,6 +1,6 @@
 ---
-title: "我的个人站是怎么发布的：Decap、GitHub、Vercel 与 R2 的完整工作流"
-description: "从本地修改代码，到多设备写草稿、上传原图和在线发布，记录个人站的架构选择、实际工作流与踩坑经验。"
+title: 我的个人站是怎么发布的：Decap、GitHub、Vercel 与 R2 的完整工作流
+description: 从本地修改代码，到多设备写草稿、上传原图和在线发布，记录个人站的架构选择、实际工作流与踩坑经验。
 date: 2026-11-05
 tags:
   - 个人网站
@@ -8,8 +8,9 @@ tags:
   - Decap CMS
   - Vercel
   - Cloudflare R2
-draft: false
+  - GitHub
 media_id: 4de32a6e-96f1-4160-a2f5-ac88af7ebfc5
+draft: false
 ---
 
 这次整理个人网站，最开始的目标很简单：用自己的域名搭一个可以公开访问的网站，成本尽量低，以后能够持续写文章，也能做一些小功能。
