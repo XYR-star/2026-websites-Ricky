@@ -2,7 +2,7 @@ const sectionTypes = new Set([
   "featuredPosts", "travelList", "researchList", "curatedLinks",
   "nowSummary", "aboutNote", "quote", "richText",
 ]);
-const pageNames = new Set(["homepage", "about", "now", "projects", "site"]);
+const pageNames = new Set(["homepage", "about", "now", "projects", "tracks", "site"]);
 const controlCharacters = /[\u0000-\u001f\u007f-\u009f]/;
 
 /** externalOnly excludes links within this website; mailto remains an allowed external scheme. */
@@ -142,6 +142,13 @@ function projects(data) {
   });
 }
 
+function tracks(data) {
+  object(data, "轨迹页", ["hero", "empty"]);
+  hero(data.hero, "轨迹页.hero");
+  object(data.empty, "轨迹页.empty", ["title", "description"]);
+  texts(data.empty, "轨迹页.empty", ["title", "description"]);
+}
+
 function site(data) {
   object(data, "站点信息", ["title", "description", "intro", "about", "email", "location", "socialLinks"]);
   texts(data, "站点信息", ["title", "description", "about", "email", "location"], ["intro"]);
@@ -150,8 +157,8 @@ function site(data) {
 
 /** Validate without reordering, normalizing text, generating IDs, or changing the supplied data. */
 export function validatePageData(name, data) {
-  if (!pageNames.has(name)) fail("页面", "不支持这个页面名称；请选择 homepage、about、now、projects 或 site。");
-  ({ homepage, about, now, projects, site })[name](data);
+  if (!pageNames.has(name)) fail("页面", "不支持这个页面名称。请选择 homepage、about、now、projects、tracks 或 site。");
+  ({ homepage, about, now, projects, tracks, site })[name](data);
   return data;
 }
 

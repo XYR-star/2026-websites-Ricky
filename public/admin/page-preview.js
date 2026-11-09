@@ -1,6 +1,6 @@
 import { plainPreviewData, previewTheme, previewThemeLifecycle, safePreviewLink } from "../cms-trial/article-preview.js";
 
-const PAGE_LABELS = { homepage: "首页", about: "关于我", now: "最近在做什么", projects: "长期项目", site: "站点简介" };
+const PAGE_LABELS = { homepage: "首页", about: "关于我", now: "最近在做什么", projects: "长期项目", tracks: "轨迹", site: "站点简介" };
 const LIST_LABELS = { featuredPosts: "最新博客", researchList: "研究记录", travelList: "游记" };
 const string = (value) => typeof value === "string" ? value : "";
 const object = (value) => value && typeof value === "object" && !Array.isArray(value) ? value : {};
@@ -97,6 +97,13 @@ export function registerPagePreview(CMS, { isSafeLink } = {}) {
         h("h2", null, string(item.title) || "项目名称"), ...paragraphs(item.description));
     })];
   }
+  function tracks(data) {
+    const empty = object(data.empty);
+    return [hero(data.hero, "轨迹"),
+      h("section", { className: "page-preview__card" },
+        h("h2", null, string(empty.title) || "暂无轨迹"), ...paragraphs(empty.description)),
+    ];
+  }
   function site(data) {
     return [hero({ title: data.title, eyebrow: "站点简介", intro: data.description }, "站点名称"),
       h("section", { className: "page-preview__card" },
@@ -106,7 +113,7 @@ export function registerPagePreview(CMS, { isSafeLink } = {}) {
         links(data.socialLinks)),
     ];
   }
-  const renderers = { homepage: home, about, now, projects, site };
+  const renderers = { homepage: home, about, now, projects, tracks, site };
   CMS.registerPreviewStyle("/admin/page-preview.css");
   // Exact 3.17.3 FILES.templateName returns the file entry's slug, not collection name.
   for (const [name, label] of Object.entries(PAGE_LABELS)) {

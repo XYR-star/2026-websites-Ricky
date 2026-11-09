@@ -7,7 +7,7 @@ function realData(name) {
   return JSON.parse(readFileSync(new URL(`../src/data/${name}.json`, import.meta.url), "utf8"));
 }
 
-for (const name of ["homepage", "about", "now", "projects", "site"]) {
+for (const name of ["homepage", "about", "now", "projects", "tracks", "site"]) {
   test(`validates real ${name} JSON without changing text, order, or object identity`, () => {
     const data = realData(name);
     const before = structuredClone(data);
@@ -150,10 +150,13 @@ test("rejects malformed migrated page structures before templates can crash", ()
   const site = realData("site");
   site.socialLinks = {};
   assert.throws(() => validatePageData("site", site), /站点信息.socialLinks/);
+  const tracks = realData("tracks");
+  tracks.empty.description = ["Not text"];
+  assert.throws(() => validatePageData("tracks", tracks), /轨迹页.empty.description/);
 });
 
 test("preSave validates all fixed page entry names against their exact filenames without replacing data", () => {
-  for (const name of ["homepage", "about", "now", "projects", "site"]) {
+  for (const name of ["homepage", "about", "now", "projects", "tracks", "site"]) {
     const data = realData(name);
     const before = structuredClone(data);
     assert.equal(validateCMSPreSave({ collection: "pages", slug: name, path: `src/data/${name}.json`, data }), undefined);
@@ -163,6 +166,7 @@ test("preSave validates all fixed page entry names against their exact filenames
 
 for (const [slug, path] of [
   ["homepage", "src/data/about.json"],
+  ["tracks", "src/data/site.json"],
   ["homepage", "src/data/homepage.json.bak"],
   ["homepage", "../src/data/homepage.json"],
   ["homepage", undefined],

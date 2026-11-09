@@ -49,7 +49,7 @@ for (const collection of ["blog", "travel", "research"]) {
   });
 }
 
-for (const name of ["homepage", "about", "now", "projects", "site"]) {
+for (const name of ["homepage", "about", "now", "projects", "tracks", "site"]) {
   for (const status of ["added", "modified"]) {
     test(`prePublish accepts ${status} of the fixed ${name} page JSON`, async () => {
       const value = pull("pages");
@@ -159,6 +159,13 @@ for (const [label, files] of invalidPageFiles) {
     await assert.rejects(checkArticlePublication({ entry: entry("pages", "homepage") }), /其他文件/);
   });
 }
+
+test("prePublish rejects another page JSON alongside tracks", async () => {
+  const value = pull("pages");
+  value.head.ref = "cms/pages/tracks";
+  mockGitHub([value], { files: [file("src/data/tracks.json"), file("src/data/homepage.json")] });
+  await assert.rejects(checkArticlePublication({ entry: entry("pages", "tracks") }), /其他文件/);
+});
 
 for (const [label, mutate] of invalidPulls) {
   test(`prePublish rejects a page PR with ${label}`, async () => {

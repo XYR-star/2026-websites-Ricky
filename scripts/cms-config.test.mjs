@@ -20,7 +20,7 @@ const articleCollections = config.collections.filter(({ folder }) => typeof fold
 const pageCollection = config.collections.find(({ name }) => name === "pages");
 const expectedPages = {
   homepage: "src/data/homepage.json", about: "src/data/about.json", now: "src/data/now.json",
-  projects: "src/data/projects.json", site: "src/data/site.json",
+  projects: "src/data/projects.json", tracks: "src/data/tracks.json", site: "src/data/site.json",
 };
 
 test("every article collection can pass the server publication boundary", () => {
@@ -76,13 +76,13 @@ test("research fields match its article model and only accept safe web reference
   assert.equal(pattern.test("mailto:reader@example.com"), false);
 });
 
-test("editable pages are exactly the five allowed JSON files", () => {
+test("editable pages are exactly the six allowed JSON files", () => {
   assert.equal(pageCollection.format, "json");
   assert.equal(pageCollection.folder, undefined);
   assert.equal(pageCollection.delete, false);
   assert.deepEqual(Object.fromEntries(pageCollection.files.map(({ name, file }) => [name, file])), expectedPages);
   assert.deepEqual(Object.fromEntries(pageCollection.files.map(({ name, preview_path }) => [name, preview_path])), {
-    homepage: "/", about: "/about/", now: "/now/", projects: "/projects/", site: "/",
+    homepage: "/", about: "/about/", now: "/now/", projects: "/projects/", tracks: "/tracks/", site: "/",
   });
   for (const page of pageCollection.files) {
     const input = {
