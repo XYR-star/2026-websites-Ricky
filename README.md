@@ -47,6 +47,7 @@ flowchart LR
 | 游记 | 标题、简介、日期、封面、Markdown 正文 |
 | 研究日志 | 标题、摘要、日期、项目、进展状态、资料链接、Markdown 正文 |
 | 页面与站点 → 首页 | 开场文案、区块内容、显示开关和列表排序 |
+| 页面与站点 → 轨迹 | Citywalk 与出行路线页面的介绍和空状态文案 |
 | 页面与站点 → 关于我 | 自我介绍、个人信息和链接 |
 | 页面与站点 → 最近在做什么 | 页头与近况记录 |
 | 页面与站点 → 长期项目 | 页头与项目列表 |
@@ -123,6 +124,7 @@ src/content/research/         研究日志 Markdown
 src/content/travel/           游记 Markdown
 src/content.config.ts        文章字段与构建校验
 src/data/homepage.json        首页区块与文案
+src/data/tracks.json          轨迹页文案
 src/data/about.json           关于页
 src/data/now.json             近况
 src/data/projects.json        项目

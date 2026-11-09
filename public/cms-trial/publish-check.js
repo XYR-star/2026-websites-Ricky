@@ -6,6 +6,7 @@ const pageFiles = new Map([
   ["about", "src/data/about.json"],
   ["now", "src/data/now.json"],
   ["projects", "src/data/projects.json"],
+  ["tracks", "src/data/tracks.json"],
   ["site", "src/data/site.json"],
 ]);
 

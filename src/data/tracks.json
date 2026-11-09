@@ -1,0 +1,11 @@
+{
+  "hero": {
+    "eyebrow": "Walks & Routes",
+    "title": "轨迹",
+    "intro": "记录 Citywalk、日常步行和旅行路线，记下走过的街巷与沿途观察。"
+  },
+  "empty": {
+    "title": "轨迹整理中",
+    "description": "第一条路线整理好后会在这里发布。你也可以先看看沿途的图文记录。"
+  }
+}

@@ -28,7 +28,7 @@ function nodes(tree, tag) {
 function text(tree) { return typeof tree === "string" ? tree : tree?.children?.map(text).join("") ?? ""; }
 
 test("file collections register by entry slug using the pinned Decap contract", () => {
-  assert.deepEqual([...templates.keys()], ["homepage", "about", "now", "projects", "site"]);
+  assert.deepEqual([...templates.keys()], ["homepage", "about", "now", "projects", "tracks", "site"]);
   assert.deepEqual(styles, ["/admin/page-preview.css"]);
 });
 
@@ -42,6 +42,10 @@ test("each current JSON page has readable content and inherits the editor theme"
     assert.match(text(tree), new RegExp((data.hero?.title ?? data.title).slice(0, 5)));
     assert.doesNotMatch(text(tree), /\{"hero":|\{"title":/);
     assert.equal(JSON.stringify(data), before);
+    if (name === "tracks") {
+      assert.deepEqual(nodes(tree, "h2").map(text), [data.empty.title]);
+      assert.ok(text(tree).includes(data.empty.description));
+    }
   }
 });
 

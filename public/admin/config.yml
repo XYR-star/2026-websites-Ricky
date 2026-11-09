@@ -806,6 +806,38 @@ collections:
               - label: 介绍
                 name: description
                 widget: text
+      - name: tracks
+        label: 轨迹
+        file: src/data/tracks.json
+        preview_path: /tracks/
+        fields:
+          - label: 页头
+            name: hero
+            widget: object
+            fields:
+              - label: 小标题
+                name: eyebrow
+                widget: string
+                required: false
+                default: ''
+              - label: 标题
+                name: title
+                widget: string
+              - label: 介绍
+                name: intro
+                widget: text
+                required: false
+                default: ''
+          - label: 暂无轨迹时的提示
+            name: empty
+            widget: object
+            fields:
+              - label: 标题
+                name: title
+                widget: string
+              - label: 说明
+                name: description
+                widget: text
       - name: site
         label: 站点简介
         file: src/data/site.json

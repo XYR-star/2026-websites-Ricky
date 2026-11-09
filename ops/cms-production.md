@@ -1,6 +1,6 @@
 # 正式内容后台
 
-正式入口：`https://www.heyrickishere.com/admin/`。支持博客、游记、研究日志，以及首页、关于、近况、项目和站点文案。沿用保存、审核与发布流程；文章继续使用 R2 原图和素材复用。
+正式入口为 `https://www.heyrickishere.com/admin/`。支持博客、游记、研究日志，以及首页、轨迹、关于、近况、项目和站点文案。沿用保存、审核与发布流程。文章继续使用 R2 原图和素材复用。
 
 ## 工作流
 
@@ -30,11 +30,12 @@
 
 ## 页面与外观
 
-「页面与站点」下五个固定文件与正式页面对应：
+「页面与站点」下的固定文件与正式页面对应。
 
 | 后台项 | 仓库文件 | 正式页面 |
 | --- | --- | --- |
 | 首页 | `src/data/homepage.json` | `/` |
+| 轨迹 | `src/data/tracks.json` | `/tracks` |
 | 关于 | `src/data/about.json` | `/about` |
 | 近况 | `src/data/now.json` | `/now` |
 | 项目 | `src/data/projects.json` | `/projects` |

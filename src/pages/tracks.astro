@@ -1,0 +1,23 @@
+---
+import SiteLayout from "../layouts/SiteLayout.astro";
+import tracksData from "../data/tracks.json";
+import { validatePageData } from "../lib/page-data.mjs";
+
+const tracks = validatePageData("tracks", tracksData) as typeof tracksData;
+---
+
+<SiteLayout title={`${tracks.hero.title} · Ricky`} description={tracks.hero.intro}>
+  <section class="shell page-hero">
+    <div class="eyebrow">{tracks.hero.eyebrow}</div>
+    <h1>{tracks.hero.title}</h1>
+    <p>{tracks.hero.intro}</p>
+  </section>
+
+  <section class="shell section" aria-labelledby="tracks-empty-title">
+    <div class="note-panel">
+      <h2 class="entry__title" id="tracks-empty-title">{tracks.empty.title}</h2>
+      <p>{tracks.empty.description}</p>
+      <a class="section__link" href="/travel">查看游记</a>
+    </div>
+  </section>
+</SiteLayout>

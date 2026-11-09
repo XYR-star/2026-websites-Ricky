@@ -64,6 +64,7 @@ const pages = new Map([
   ["about", "src/data/about.json"],
   ["now", "src/data/now.json"],
   ["projects", "src/data/projects.json"],
+  ["tracks", "src/data/tracks.json"],
   ["site", "src/data/site.json"],
 ]);
 
@@ -84,6 +85,10 @@ const pagePublication = (overrides = {}) => publication({
 const rejectedPages = [
   ["other page JSON", { changes: [change("src/data/about.json")] }],
   ["second page JSON", { changes: [change("src/data/homepage.json"), change("src/data/about.json")] }],
+  ["another page JSON alongside tracks", {
+    headRef: "cms/pages/tracks",
+    changes: [change("src/data/tracks.json"), change("src/data/homepage.json")],
+  }],
   ["adjacent site configuration", { changes: [change("src/data/homepage.json"), change("src/data/config.json")] }],
   ["CMS configuration", { changes: [change("src/data/homepage.json"), change("public/admin/config.yml")] }],
   ["article alongside page", { changes: [change("src/data/homepage.json"), change()] }],
