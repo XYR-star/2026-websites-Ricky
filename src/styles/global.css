@@ -720,13 +720,19 @@ main {
   margin-top: 0.7rem;
   padding: 0.95rem 1rem;
   border-radius: 20px;
-  border: 1px solid var(--line);
-  background: rgba(255, 252, 248, 0.95);
+  border: 1px solid var(--line-strong);
+  background: var(--paper-solid);
   color: var(--text);
+  caret-color: currentColor;
   font-size: 1rem;
 }
 
-.search-input:focus-visible {
+.search-input::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
+.search-input:focus {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
 }
