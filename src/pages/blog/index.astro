@@ -3,6 +3,7 @@ import { getCollection } from "astro:content";
 import PostCard from "../../components/PostCard.astro";
 import SiteLayout from "../../layouts/SiteLayout.astro";
 import { getVisiblePosts } from "../../lib/content";
+import "../../styles/column-directory.css";
 
 const posts = getVisiblePosts(await getCollection("blog"));
 ---
@@ -14,15 +15,16 @@ const posts = getVisiblePosts(await getCollection("blog"));
     <p>记录那些值得被好好写下来的问题、过程和判断。</p>
   </section>
 
-  <section class="shell section">
-    <div class="section__head">
-      <div></div>
-      <div class="meta-row">
+  <section class="shell section column-directory" aria-labelledby="blog-directory-title">
+    <div class="column-directory__head">
+      <h2 id="blog-directory-title">文章目录</h2>
+      <nav class="meta-row" aria-label="博客目录导航">
         <a class="section__link" href="/tags">按标签浏览</a>
         <a class="section__link" href="/search">搜索</a>
-      </div>
+      </nav>
     </div>
-    <div class="grid grid--two">
+    <div class="column-directory__list">
+      {posts.length === 0 && <p class="column-directory__empty">目前还没有公开的博客文章。</p>}
       {posts.map((post) => (
         <PostCard post={post} />
       ))}

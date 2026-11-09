@@ -11,6 +11,7 @@ interface Props {
   tags?: string[];
   cover?: string;
   eyebrow?: string;
+  references?: Array<{ label: string; href: string }>;
   previous?: {
     href: string;
     title: string;
@@ -36,6 +37,7 @@ const {
   tags = [],
   cover,
   eyebrow = "Essay",
+  references = [],
   previous = null,
   next = null,
   related = [],
@@ -50,34 +52,48 @@ const assetOrigin = coverUrl && [
 
 <SiteLayout title={`${title} · Ricky`} description={description}>
   {assetOrigin && <link slot="head" rel="preconnect" href={assetOrigin} />}
-  <section class="shell page-hero">
-    <div class="eyebrow">{eyebrow}</div>
-    <h1>{title}</h1>
-    <div class="meta-row">
-      <span>{formatDate(date)}</span>
-      {tags.map((tag) => (
-        <span class="tag">{tag}</span>
-      ))}
+  <article class="magazine-article" aria-labelledby="article-title">
+    <header class="shell magazine-article__header">
+      <div class="magazine-article__byline">
+        <span class="section-label">{eyebrow}</span>
+        <time datetime={date.toISOString()}>{formatDate(date)}</time>
+      </div>
+      <h1 id="article-title">{title}</h1>
+      {description.trim() && <p class="magazine-article__lead">{description}</p>}
+      {tags.length > 0 && (
+        <ul class="magazine-article__tags" aria-label="文章标签">
+          {tags.map((tag) => <li>{tag}</li>)}
+        </ul>
+      )}
+    </header>
+    {cover && (
+      <figure class="shell magazine-article__cover">
+        <img src={cover} alt={title} fetchpriority="high" />
+      </figure>
+    )}
+    <div class="prose magazine-article__prose" data-article-prose>
+      <slot />
+      {references.length > 0 && (
+        <section class="magazine-article__references" aria-labelledby="article-references-title">
+          <h2 id="article-references-title">资料链接</h2>
+          <ul>
+            {references.map(({ label, href }) => (
+              <li><a href={href} target="_blank" rel="noreferrer">{label}</a></li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
-    <div class="divider"></div>
-  </section>
-  {cover && (
-    <section class="shell article-cover-wrap">
-      <img class="article-cover" src={cover} alt={title} fetchpriority="high" />
-    </section>
-  )}
-  <article class="prose" data-article-prose>
-    <slot />
   </article>
   {(previous || next) && (
-    <section class="shell section article-continuation">
+    <nav class="shell magazine-followup" aria-labelledby="article-continuation-title">
       <div class="section__head">
         <div>
           <div class="section-label">Continue Reading</div>
-          <h2>继续阅读</h2>
+          <h2 id="article-continuation-title">继续阅读</h2>
         </div>
       </div>
-      <div class="grid grid--two">
+      <div class="magazine-followup__neighbors">
         {previous ? (
           <StoryLinkCard
             href={previous.href}
@@ -103,17 +119,17 @@ const assetOrigin = coverUrl && [
           </div>
         )}
       </div>
-    </section>
+    </nav>
   )}
   {related.length > 0 && (
-    <section class="shell section article-related">
+    <section class="shell magazine-followup" aria-labelledby="article-related-title">
       <div class="section__head">
         <div>
           <div class="section-label">Related</div>
-          <h2>相关推荐</h2>
+          <h2 id="article-related-title">相关推荐</h2>
         </div>
       </div>
-      <div class="stack">
+      <div class="magazine-followup__related">
         {related.map((item) => (
           <StoryLinkCard
             href={item.href}
@@ -127,3 +143,174 @@ const assetOrigin = coverUrl && [
   )}
   <ArticleEnhancements />
 </SiteLayout>
+
+<style>
+  .magazine-article__header,
+  .magazine-article__cover,
+  .magazine-followup {
+    max-width: 68rem;
+  }
+
+  .magazine-article__header {
+    padding-top: clamp(2rem, 6vw, 4.75rem);
+  }
+
+  .magazine-article__byline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem 1.25rem;
+    padding: 0.8rem 0;
+    border-block: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+
+  .magazine-article__header h1 {
+    margin: clamp(1.25rem, 4vw, 2.5rem) 0 0;
+    font-family: var(--serif);
+    font-size: clamp(2.45rem, 6.8vw, 5.35rem);
+    font-weight: 500;
+    line-height: 1.08;
+    overflow-wrap: anywhere;
+    text-wrap: balance;
+  }
+
+  .magazine-article__lead {
+    max-width: 46rem;
+    margin: 1.15rem 0 0;
+    color: var(--muted);
+    font-size: clamp(1.05rem, 2.1vw, 1.35rem);
+    line-height: 1.7;
+    overflow-wrap: anywhere;
+  }
+
+  .magazine-article__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1rem;
+    margin: 1.2rem 0 0;
+    padding: 0;
+    list-style: none;
+    color: var(--accent);
+    font-size: 0.85rem;
+    overflow-wrap: anywhere;
+  }
+
+  .magazine-article__tags li {
+    max-width: 100%;
+    padding-inline-start: 0.6rem;
+    border-inline-start: 1px solid var(--line-strong);
+  }
+
+  .magazine-article__cover {
+    margin-block: clamp(1.5rem, 4vw, 2.65rem) 0;
+  }
+
+  .magazine-article__cover img {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border: 1px solid var(--line);
+    background: var(--bg-soft);
+  }
+
+  .magazine-article__prose {
+    width: min(calc(100% - 2rem), 44rem);
+    padding-block: clamp(2rem, 5vw, 3.8rem) clamp(2.5rem, 6vw, 4.5rem);
+    line-height: 1.9;
+    overflow-wrap: anywhere;
+  }
+
+  .magazine-article__prose :global(p),
+  .magazine-article__prose :global(li) {
+    color: var(--text);
+    font-size: clamp(1.05rem, 1.7vw, 1.15rem);
+  }
+
+  .magazine-article__prose :global(h2),
+  .magazine-article__prose :global(h3) {
+    line-height: 1.25;
+  }
+
+  .magazine-article__prose :global(h2) {
+    margin-top: 2.4rem;
+    font-size: clamp(1.6rem, 4vw, 2.2rem);
+  }
+
+  .magazine-article__prose :global(a) {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 0.18em;
+  }
+
+  .magazine-article__prose :global(blockquote) {
+    margin-inline: 0;
+    padding-inline-start: 1rem;
+    border-inline-start: 2px solid var(--accent);
+  }
+
+  .magazine-article__prose :global(pre) {
+    overflow-wrap: normal;
+  }
+
+  .magazine-article__prose :global(table) {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  .magazine-article__prose :global(.prose-figure img),
+  .magazine-article__prose :global(.image-lightbox-trigger) {
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .magazine-article__prose :global(.prose-figure figcaption) {
+    padding-top: 0.45rem;
+    border-top: 1px solid var(--line);
+    line-height: 1.5;
+    text-align: start;
+  }
+
+  .magazine-article__references {
+    margin-top: 2.5rem;
+    border-top: 1px solid var(--line);
+  }
+
+  .magazine-followup {
+    padding-block: 1.25rem clamp(1.75rem, 4vw, 3rem);
+    border-top: 1px solid var(--line-strong);
+  }
+
+  .magazine-followup__neighbors,
+  .magazine-followup__related {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+    gap: 1rem 1.5rem;
+  }
+
+  .magazine-followup :global(.entry) {
+    min-width: 0;
+    padding: 1rem 0;
+    border: 0;
+    border-top: 1px solid var(--line);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow-wrap: anywhere;
+  }
+
+  .magazine-followup :global(.entry:hover) {
+    transform: none;
+    background: transparent;
+  }
+
+  .magazine-followup :global(.entry__title a:hover),
+  .magazine-followup :global(.entry__title a:focus-visible) {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 0.18em;
+  }
+</style>

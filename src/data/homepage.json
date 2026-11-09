@@ -1,4 +1,5 @@
 {
+  "layoutVersion": 1,
   "hero": {
     "id": "home-hero",
     "eyebrow": "Ricky's Notes",
@@ -10,6 +11,27 @@
     "secondaryLinkHref": "#now-glimpse"
   },
   "sections": [
+    {
+      "id": "magazine-cover",
+      "type": "magazineCover",
+      "enabled": true,
+      "eyebrow": "精选游记",
+      "travelSlug": "2026-04-21-120-swu"
+    },
+    {
+      "id": "magazine-contents",
+      "type": "magazineContents",
+      "enabled": true,
+      "title": "继续阅读",
+      "count": 2,
+      "linkLabel": "全部归档",
+      "linkHref": "/archive"
+    },
+    {
+      "id": "magazine-intro",
+      "type": "homeIntro",
+      "enabled": true
+    },
     {
       "id": "start-here",
       "type": "curatedLinks",

@@ -37,3 +37,14 @@ test("homepage supports new sections without a legacy order field", () => {
   const section = { id: "new", enabled: true };
   assert.deepEqual(homepage.getOrderedHomepageSections([section]), [section]);
 });
+
+test("homepage respects the position and visibility of magazine sections", () => {
+  const hero = { id: "home-hero" };
+  const cover = { id: "cover", type: "magazineCover", enabled: false };
+  const contents = { id: "contents", type: "magazineContents", enabled: true };
+  const intro = { id: "intro", type: "homeIntro", enabled: true };
+  assert.deepEqual(homepage.getHomepageLayout({ hero, sections: [intro, cover, contents] }), [intro, contents]);
+  assert.deepEqual(homepage.getHomepageLayout({ layoutVersion: 1, hero, sections: [] }), []);
+  assert.deepEqual(homepage.getHomepageLayout({ hero, sections: [] }).map(({ type }) => type),
+    ["magazineCover", "magazineContents", "homeIntro"]);
+});

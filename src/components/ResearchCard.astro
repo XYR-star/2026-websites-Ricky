@@ -10,8 +10,8 @@ const { item } = Astro.props;
 ---
 
 <article class="entry fade-in">
-  <div class="meta-row">
-    <span>{formatDate(item.data.date)}</span>
+  <div class="meta-row entry-meta">
+    <time datetime={item.data.date.toISOString()}>{formatDate(item.data.date)}</time>
     {item.data.project && <span class="tag">{item.data.project}</span>}
     {item.data.status && <span class="tag">{item.data.status}</span>}
   </div>
@@ -20,7 +20,7 @@ const { item } = Astro.props;
   </h3>
   <p>{item.data.summary}</p>
   {item.data.links.length > 0 && (
-    <div class="meta-row">
+    <div class="meta-row entry-links">
       {item.data.links.map((link) => (
         <a class="section__link" href={link.href} target="_blank" rel="noreferrer">
           {link.label}

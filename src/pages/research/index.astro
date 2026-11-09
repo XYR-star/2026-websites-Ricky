@@ -3,6 +3,7 @@ import { getCollection } from "astro:content";
 import ResearchCard from "../../components/ResearchCard.astro";
 import SiteLayout from "../../layouts/SiteLayout.astro";
 import { getVisibleResearchEntries } from "../../lib/content";
+import "../../styles/column-directory.css";
 
 const items = getVisibleResearchEntries(await getCollection("research"));
 ---
@@ -14,15 +15,16 @@ const items = getVisibleResearchEntries(await getCollection("research"));
     <p>按时间记录实验、阅读、系统迭代与下一步计划。</p>
   </section>
 
-  <section class="shell section">
-    <div class="section__head">
-      <div></div>
-      <div class="meta-row">
+  <section class="shell section column-directory" aria-labelledby="research-directory-title">
+    <div class="column-directory__head">
+      <h2 id="research-directory-title">研究目录</h2>
+      <nav class="meta-row" aria-label="科研目录导航">
         <a class="section__link" href="/archive">按时间归档</a>
         <a class="section__link" href="/search">搜索</a>
-      </div>
+      </nav>
     </div>
-    <div class="stack">
+    <div class="column-directory__list">
+      {items.length === 0 && <p class="column-directory__empty">目前还没有公开的研究记录。</p>}
       {items.map((item) => (
         <ResearchCard item={item} />
       ))}

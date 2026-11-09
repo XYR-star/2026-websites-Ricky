@@ -124,12 +124,18 @@ test("pages contain no article upload fields and site domain remains outside the
   assert.equal(Object.hasOwn(siteData, "siteUrl"), false);
 });
 
-test("homepage supports eight native block types with stable IDs and drag ordering", () => {
+test("homepage supports native magazine and existing block types with stable IDs and drag ordering", () => {
   const homepage = pageCollection.files.find(({ name }) => name === "homepage");
   const sections = homepage.fields.find(({ name }) => name === "sections");
+  assert.equal(homepage.fields.find(({ widget }) => widget !== "hidden"), sections);
+  assert.equal(sections.label, "首页布局");
   assert.equal(sections.widget, "list");
   assert.equal(sections.typeKey, "type");
-  assert.deepEqual(sections.types.map(({ name }) => name).sort(), ["aboutNote", "curatedLinks", "featuredPosts", "nowSummary", "quote", "researchList", "richText", "travelList"]);
+  assert.deepEqual(sections.types.map(({ name }) => name).sort(), [
+    "aboutNote", "curatedLinks", "featuredPosts", "homeIntro", "magazineContents", "magazineCover",
+    "nowSummary", "quote", "researchList", "richText", "travelList",
+  ]);
+  const magazineTypes = new Set(["homeIntro", "magazineContents", "magazineCover"]);
   for (const type of sections.types) {
     assert.equal(type.widget, "object");
     const id = type.fields.find(({ name }) => name === "id");
@@ -137,8 +143,30 @@ test("homepage supports eight native block types with stable IDs and drag orderi
     assert.equal(id.prefix, "section-");
     assert.equal(id.default, undefined);
     assert.equal(type.fields.find(({ name }) => name === "enabled").default, true);
-    assert.equal(type.fields.find(({ name }) => name === "order").widget, "hidden");
+    if (!magazineTypes.has(type.name)) assert.equal(type.fields.find(({ name }) => name === "order").widget, "hidden");
   }
+});
+
+test("magazine homepage selects a travel slug and keeps its layout settings in the same page", () => {
+  const homepage = pageCollection.files.find(({ name }) => name === "homepage");
+  const version = homepage.fields.find(({ name }) => name === "layoutVersion");
+  assert.equal(version.widget, "hidden");
+  assert.equal(version.default, 1);
+  const { types } = homepage.fields.find(({ name }) => name === "sections");
+  const cover = types.find(({ name }) => name === "magazineCover");
+  const travelSlug = cover.fields.find(({ name }) => name === "travelSlug");
+  assert.equal(travelSlug.widget, "relation");
+  assert.equal(travelSlug.collection, "travel");
+  assert.equal(travelSlug.value_field, "{{slug}}");
+  assert.equal(travelSlug.multiple, false);
+  assert.equal(travelSlug.required, false);
+  const contents = types.find(({ name }) => name === "magazineContents");
+  assert.deepEqual(Object.fromEntries(contents.fields.filter(({ name }) => !["id", "enabled"].includes(name))
+    .map(({ name, default: value }) => [name, value])), {
+    title: "继续阅读", count: 2, linkLabel: "全部归档", linkHref: "/archive",
+  });
+  const opening = types.find(({ name }) => name === "homeIntro");
+  assert.deepEqual(opening.fields.map(({ name }) => name), ["id", "enabled"]);
 });
 
 test("editable link patterns permit their intended URLs and block active or malformed schemes", () => {

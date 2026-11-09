@@ -1,6 +1,8 @@
+const magazineSectionTypes = new Set(["magazineCover", "magazineContents", "homeIntro"]);
 const sectionTypes = new Set([
   "featuredPosts", "travelList", "researchList", "curatedLinks",
   "nowSummary", "aboutNote", "quote", "richText",
+  ...magazineSectionTypes,
 ]);
 const pageNames = new Set(["homepage", "about", "now", "projects", "tracks", "site"]);
 const controlCharacters = /[\u0000-\u001f\u007f-\u009f]/;
@@ -86,18 +88,31 @@ function integer(value, path, min, max) {
 }
 
 function homepage(data) {
-  object(data, "首页", ["hero", "sections"]);
+  object(data, "首页", ["layoutVersion", "hero", "sections"]);
+  if (data.layoutVersion !== undefined && data.layoutVersion !== 1) fail("首页.layoutVersion", "首页布局版本无效，请重新打开编辑页面。");
   hero(data.hero, "首页.hero", ["id", "note", "primaryLinkLabel", "primaryLinkHref", "secondaryLinkLabel", "secondaryLinkHref"]);
   texts(data.hero, "首页.hero", [], ["note", "primaryLinkLabel", "secondaryLinkLabel"]);
   link(data.hero.primaryLinkHref, "首页.hero.primaryLinkHref", { optional: true, empty: true });
   link(data.hero.secondaryLinkHref, "首页.hero.secondaryLinkHref", { optional: true, empty: true });
   const ids = new Set();
+  const usedMagazineTypes = new Set();
   sectionId(data.hero.id, "首页.hero.id", ids);
   array(data.sections, "首页.sections", 50).forEach((section, index) => {
     const path = `首页.sections[${index + 1}]`;
-    object(section, path, ["id", "type", "enabled", "order", "eyebrow", "title", "linkLabel", "linkHref", "count", "body", "quote", "items"]);
+    object(section, path, ["id", "type", "enabled", "order", "eyebrow", "title", "linkLabel", "linkHref", "count", "body", "quote", "items", "travelSlug"]);
     sectionId(section.id, `${path}.id`, ids);
-    if (!sectionTypes.has(section.type)) fail(`${path}.type`, "请选择已支持的 8 种首页区块类型之一。");
+    if (!sectionTypes.has(section.type)) fail(`${path}.type`, "请选择后台提供的首页板块类型。");
+    if (magazineSectionTypes.has(section.type)) {
+      if (usedMagazineTypes.has(section.type)) fail(`${path}.type`, "封面故事、继续阅读和首页开场各可添加一块。");
+      usedMagazineTypes.add(section.type);
+    }
+    if (section.travelSlug !== undefined) {
+      if (section.type !== "magazineCover") fail(`${path}.travelSlug`, "只有封面故事板块可以选择游记。");
+      const slug = section.travelSlug;
+      if (slug !== null && (typeof slug !== "string" || /[\s/\\?#]/u.test(slug) || controlCharacters.test(slug))) {
+        fail(`${path}.travelSlug`, "请从游记列表选择文章，或清空以自动选择。");
+      }
+    }
     if (typeof section.enabled !== "boolean") fail(`${path}.enabled`, "应填写 true 或 false，表示是否显示这个区块。");
     if (section.order !== undefined) integer(section.order, `${path}.order`, 0, 10000);
     if (section.count !== undefined) integer(section.count, `${path}.count`, 1, 24);

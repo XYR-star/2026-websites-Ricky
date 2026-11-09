@@ -35,6 +35,7 @@ const related = getRelatedResearch(items, item).map((entry) => ({
   date={item.data.date}
   tags={researchTags}
   eyebrow="Research"
+  references={item.data.links}
   previous={previous && {
     href: `/research/${previous.slug}`,
     title: previous.data.title,

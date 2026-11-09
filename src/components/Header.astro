@@ -1,4 +1,6 @@
 ---
+import { siteMeta } from "../data/site";
+
 const links = [
   { href: "/", label: "首页" },
   { href: "/blog", label: "博客" },
@@ -9,18 +11,27 @@ const links = [
   { href: "/search", label: "搜索" },
   { href: "/about", label: "关于我" },
 ];
+
+const path = Astro.url.pathname.replace(/\/$/, "") || "/";
 ---
 
 <header class="site-header">
   <div class="shell site-header__inner">
     <a class="brand" href="/">
-      <span class="brand__name">Ricky</span>
+      <span class="brand__name">{siteMeta.title}</span>
       <span class="brand__tag">Notes, Research and Travel</span>
     </a>
     <nav class="nav" aria-label="主导航">
       {links.map((link) => (
-        <a href={link.href}>{link.label}</a>
+        <a
+          href={link.href}
+          aria-current={path === link.href ? "page" : undefined}
+          class:list={[link.href !== "/" && path.startsWith(`${link.href}/`) && "nav__ancestor"]}
+        >{link.label}</a>
       ))}
     </nav>
+    <button class="masthead-theme" type="button" data-theme-toggle aria-label="切换黑暗模式" title="切换黑暗模式">
+      <span data-theme-icon aria-hidden="true">◐</span>
+    </button>
   </div>
 </header>
