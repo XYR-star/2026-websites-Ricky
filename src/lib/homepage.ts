@@ -7,6 +7,9 @@ export const homepageSectionTypes = [
   "aboutNote",
   "quote",
   "richText",
+  "magazineCover",
+  "magazineContents",
+  "homeIntro",
 ] as const;
 
 export type HomepageSectionType = (typeof homepageSectionTypes)[number];
@@ -72,15 +75,33 @@ export type HomepageRichTextSection = HomepageSectionBase & {
   body: string;
 };
 
+export type HomepageMagazineCover = HomepageSectionBase & {
+  type: "magazineCover";
+  travelSlug?: string | null;
+};
+
+export type HomepageMagazineContents = HomepageSectionBase & {
+  type: "magazineContents";
+  count?: number;
+};
+
+export type HomepageIntro = HomepageSectionBase & {
+  type: "homeIntro";
+};
+
 export type HomepageSection =
   | HomepageListSection
   | HomepageQuoteSection
   | HomepageCuratedLinksSection
   | HomepageNowSummarySection
   | HomepageAboutNoteSection
-  | HomepageRichTextSection;
+  | HomepageRichTextSection
+  | HomepageMagazineCover
+  | HomepageMagazineContents
+  | HomepageIntro;
 
 export type HomepageContent = {
+  layoutVersion?: 1;
   hero: HomepageHero;
   sections: HomepageSection[];
 };
@@ -90,8 +111,41 @@ export function getOrderedHomepageSections(sections: HomepageSection[]) {
   return sections.filter((section) => section.enabled);
 }
 
+const magazineSectionLabels: Partial<Record<HomepageSectionType, string>> = {
+  magazineCover: "封面故事",
+  magazineContents: "继续阅读",
+  homeIntro: "开场",
+};
+
+export function usesMagazineLayout(homepage: HomepageContent) {
+  return homepage.layoutVersion === 1 ||
+    homepage.sections.some((section) => Object.hasOwn(magazineSectionLabels, section.type));
+}
+
+export function getHomepageLayout(homepage: HomepageContent): HomepageSection[] {
+  const sections = getOrderedHomepageSections(homepage.sections);
+  if (usesMagazineLayout(homepage)) return sections;
+
+  const ids = new Set([homepage.hero.id, ...homepage.sections.map((section) => section.id)]);
+  const legacyId = (name: string) => {
+    let id = name;
+    while (ids.has(id)) id += "-legacy";
+    return id;
+  };
+  // Older homepage data had these three sections built into the page template.
+  return [
+    { id: legacyId("magazine-cover"), type: "magazineCover", enabled: true },
+    {
+      id: legacyId("magazine-contents"), type: "magazineContents", enabled: true,
+      linkLabel: "全部归档", linkHref: "/archive",
+    },
+    { id: homepage.hero.id, type: "homeIntro", enabled: true },
+    ...sections,
+  ];
+}
+
 export function getHomepageSectionLabel(section: HomepageSection) {
-  return section.title || section.eyebrow || section.id;
+  return section.title || section.eyebrow || magazineSectionLabels[section.type] || section.id;
 }
 
 export function splitHomepageBody(body?: string) {

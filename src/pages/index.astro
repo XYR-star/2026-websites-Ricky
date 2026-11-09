@@ -8,9 +8,10 @@ import homepageData from "../data/homepage.json";
 import { siteMeta } from "../data/site";
 import { validatePageData } from "../lib/page-data.mjs";
 import {
+  getHomepageLayout,
   getHomepageSectionLabel,
-  getOrderedHomepageSections,
   splitHomepageBody,
+  usesMagazineLayout,
   type HomepageAboutNoteSection,
   type HomepageContent,
   type HomepageListSection,
@@ -29,12 +30,19 @@ const homepage = validatePageData("homepage", homepageData) as HomepageContent;
 const posts = getVisiblePosts(await getCollection("blog"));
 const research = getVisibleResearchEntries(await getCollection("research"));
 const travel = getVisibleTravelPosts(await getCollection("travel"));
-const sections = getOrderedHomepageSections(homepage.sections);
+const sections = getHomepageLayout(homepage);
+const legacyLayout = !usesMagazineLayout(homepage);
 const siteOrigin = new URL(siteMeta.siteUrl).origin;
 
 function localPath(href: string) {
   const url = new URL(href, siteOrigin);
-  return url.origin === siteOrigin ? decodeURI(url.pathname).replace(/\/+$/, "") : "";
+  if (url.origin !== siteOrigin) return "";
+  const pathname = url.pathname.replace(/\/+$/, "");
+  try {
+    return decodeURI(pathname);
+  } catch {
+    return pathname;
+  }
 }
 
 function listLimit(type: HomepageListSection["type"]) {
@@ -44,19 +52,27 @@ function listLimit(type: HomepageListSection["type"]) {
 
 const illustratedTravel = travel.filter((post) => post.data.cover);
 const coversByPath = new Map(illustratedTravel.map((post) => [localPath(`/travel/${post.slug}`), post]));
-// Reordering or changing the CMS recommendations can choose a new lead story.
-const lead = sections
+const recommendedCover = sections
   .flatMap((section) => section.type === "curatedLinks" ? section.items : [])
   .map((item) => coversByPath.get(localPath(item.href)))
-  .find(Boolean) ?? (listLimit("travelList") > 0 ? illustratedTravel[0] : undefined);
+  .find(Boolean);
+const cover = sections.find((section) => section.type === "magazineCover");
+const contents = sections.find((section) => section.type === "magazineContents");
+const fallbackCover = recommendedCover ?? (!legacyLayout || listLimit("travelList") > 0 ? illustratedTravel[0] : undefined);
+const lead = cover
+  ? illustratedTravel.find((post) => post.slug === cover.travelSlug) ?? fallbackCover
+  : undefined;
 const leadHref = lead ? `/travel/${lead.slug}` : "";
-const continued = lead ? getArchiveEntries({
-  blog: posts.slice(0, listLimit("featuredPosts")),
-  research: research.slice(0, listLimit("researchList")),
-  travel: travel.slice(0, listLimit("travelList")),
-}).filter((entry) => entry.href !== leadHref).slice(0, 2) : [];
+const continued = contents && (!legacyLayout || lead) ? getArchiveEntries({
+  blog: legacyLayout ? posts.slice(0, listLimit("featuredPosts")) : posts,
+  research: legacyLayout ? research.slice(0, listLimit("researchList")) : research,
+  travel: legacyLayout ? travel.slice(0, listLimit("travelList")) : travel,
+}).filter((entry) => entry.href !== leadHref).slice(0, contents.count ?? 2) : [];
 const categoryLabels = { blog: "博客", research: "科研进展", travel: "游记" };
-const IntroHeading = lead ? "h2" : "h1";
+const headingSection = sections.find((section) => section.type === "homeIntro" || section.type === "magazineCover" && lead);
+const CoverHeading = headingSection?.type === "magazineCover" ? "h1" : "h2";
+const IntroHeading = headingSection?.type === "homeIntro" ? "h1" : "h2";
+const prioritizeCover = sections[0]?.type === "magazineCover";
 
 const publishedArticlePaths = new Set([
   ...posts.map((entry) => localPath(`/blog/${entry.slug}`)),
@@ -90,50 +106,7 @@ for (let index = 0; index < sections.length; index += 1) {
 
 <SiteLayout title="Ricky · 写作与科研记录" description={siteMeta.description}>
   <div class="magazine">
-    {lead && (
-      <article class="shell magazine-lead" aria-labelledby="magazine-lead-title">
-        <a class="magazine-lead__media" href={leadHref} aria-label={`阅读${lead.data.title}`}>
-          <img src={lead.data.cover} alt={`${lead.data.title}的封面`} fetchpriority="high" decoding="async" />
-        </a>
-        <div class="magazine-lead__copy">
-          <p class="magazine-kicker">精选游记 · <time datetime={lead.data.date.toISOString().slice(0, 10)}>{formatDate(lead.data.date)}</time></p>
-          <h1 id="magazine-lead-title"><a href={leadHref}>{lead.data.title}</a></h1>
-          {lead.data.description && <p class="magazine-description">{lead.data.description}</p>}
-          <a class="magazine-link" href={leadHref}>阅读全文 <span aria-hidden="true">↗</span></a>
-        </div>
-      </article>
-    )}
-
-    {continued.length > 0 && (
-      <section class="shell magazine-continue" aria-label="继续阅读">
-        <div class="magazine-section-head">
-          <h2>继续阅读</h2>
-          <a class="magazine-link" href="/archive">全部归档 <span aria-hidden="true">↗</span></a>
-        </div>
-        <div class="magazine-grid">
-          {continued.map((entry) => (
-            <article class="magazine-story">
-              <p class="magazine-kicker">{categoryLabels[entry.type]}</p>
-              <h3><a href={entry.href}>{entry.title}</a></h3>
-              {entry.description && <p class="magazine-description">{entry.description}</p>}
-            </article>
-          ))}
-        </div>
-      </section>
-    )}
-
-    <section class:list={["shell magazine-opening", { "magazine-opening--leadless": !lead }]} id={homepage.hero.id} data-home-section data-section-label="开场">
-      {homepage.hero.eyebrow && <p class="magazine-kicker">{homepage.hero.eyebrow}</p>}
-      <IntroHeading>{homepage.hero.title || siteMeta.title}</IntroHeading>
-      {homepage.hero.intro && <p class="magazine-description">{homepage.hero.intro}</p>}
-      {homepage.hero.note && <p class="magazine-description">{homepage.hero.note}</p>}
-      {(homepage.hero.primaryLinkLabel && homepage.hero.primaryLinkHref || homepage.hero.secondaryLinkLabel && homepage.hero.secondaryLinkHref) && (
-        <div class="magazine-opening__links">
-          {homepage.hero.primaryLinkLabel && homepage.hero.primaryLinkHref && <a class="magazine-link" href={homepage.hero.primaryLinkHref}>{homepage.hero.primaryLinkLabel}</a>}
-          {homepage.hero.secondaryLinkLabel && homepage.hero.secondaryLinkHref && <a class="magazine-link" href={homepage.hero.secondaryLinkHref}>{homepage.hero.secondaryLinkLabel}</a>}
-        </div>
-      )}
-    </section>
+    {!headingSection && <h1 class="magazine-accessible-title">{homepage.hero.title || siteMeta.title}</h1>}
 
     {renderGroups.map((group) => {
       if (group.kind === "featureBand") {
@@ -156,8 +129,80 @@ for (let index = 0; index < sections.length; index += 1) {
       }
 
       const section = group.section;
+      const label = getHomepageSectionLabel(section);
+
+      if (section.type === "magazineCover") {
+        if (!lead) return null;
+        const title = section.title || lead.data.title;
+        return (
+          <article class="shell magazine-lead" id={section.id} aria-label={title} data-home-section data-section-label={label}>
+            <a class="magazine-lead__media" href={leadHref} aria-label={`阅读${lead.data.title}`}>
+              <img
+                src={lead.data.cover}
+                alt={`${lead.data.title}的封面`}
+                loading={prioritizeCover ? undefined : "lazy"}
+                fetchpriority={prioritizeCover ? "high" : undefined}
+                decoding="async"
+              />
+            </a>
+            <div class="magazine-lead__copy">
+              <p class="magazine-kicker">{section.eyebrow || "精选游记"} · <time datetime={lead.data.date.toISOString().slice(0, 10)}>{formatDate(lead.data.date)}</time></p>
+              <CoverHeading><a href={leadHref}>{title}</a></CoverHeading>
+              {lead.data.description && <p class="magazine-description">{lead.data.description}</p>}
+              <a class="magazine-link" href={section.linkHref || leadHref}>{section.linkLabel || "阅读全文"} <span aria-hidden="true">↗</span></a>
+            </div>
+          </article>
+        );
+      }
+
+      if (section.type === "magazineContents") {
+        if (legacyLayout && continued.length === 0) return null;
+        const title = section.title || "继续阅读";
+        const linkLabel = section.linkLabel ?? "全部归档";
+        const linkHref = section.linkHref ?? "/archive";
+        return (
+          <section class="shell magazine-continue" id={section.id} aria-label={title} data-home-section data-section-label={label}>
+            <div class="magazine-section-head">
+              <div>
+                {section.eyebrow && <p class="magazine-kicker">{section.eyebrow}</p>}
+                <h2>{title}</h2>
+              </div>
+              {linkLabel && linkHref && <a class="magazine-link" href={linkHref}>{linkLabel} <span aria-hidden="true">↗</span></a>}
+            </div>
+            {continued.length > 0 ? (
+              <div class="magazine-grid">
+                {continued.map((entry) => (
+                  <article class="magazine-story">
+                    <p class="magazine-kicker">{categoryLabels[entry.type]}</p>
+                    <h3><a href={entry.href}>{entry.title}</a></h3>
+                    {entry.description && <p class="magazine-description">{entry.description}</p>}
+                  </article>
+                ))}
+              </div>
+            ) : <p class="magazine-description">文章整理中。</p>}
+          </section>
+        );
+      }
+
+      if (section.type === "homeIntro") {
+        return (
+          <section class:list={["shell magazine-opening", { "magazine-opening--first": section === sections[0] }]} id={section.id} data-home-section data-section-label={label}>
+            {homepage.hero.eyebrow && <p class="magazine-kicker">{homepage.hero.eyebrow}</p>}
+            <IntroHeading id={section.id !== homepage.hero.id ? homepage.hero.id : undefined}>{homepage.hero.title || siteMeta.title}</IntroHeading>
+            {homepage.hero.intro && <p class="magazine-description">{homepage.hero.intro}</p>}
+            {homepage.hero.note && <p class="magazine-description">{homepage.hero.note}</p>}
+            {(homepage.hero.primaryLinkLabel && homepage.hero.primaryLinkHref || homepage.hero.secondaryLinkLabel && homepage.hero.secondaryLinkHref) && (
+              <div class="magazine-opening__links">
+                {homepage.hero.primaryLinkLabel && homepage.hero.primaryLinkHref && <a class="magazine-link" href={homepage.hero.primaryLinkHref}>{homepage.hero.primaryLinkLabel}</a>}
+                {homepage.hero.secondaryLinkLabel && homepage.hero.secondaryLinkHref && <a class="magazine-link" href={homepage.hero.secondaryLinkHref}>{homepage.hero.secondaryLinkLabel}</a>}
+              </div>
+            )}
+          </section>
+        );
+      }
+
       return (
-        <section class="shell magazine-section" id={section.id} data-home-section data-section-label={getHomepageSectionLabel(section)}>
+        <section class="shell magazine-section" id={section.id} data-home-section data-section-label={label}>
           <div class="magazine-section-head">
             <div>
               {section.eyebrow && <p class="magazine-kicker">{section.eyebrow}</p>}
@@ -216,10 +261,12 @@ for (let index = 0; index < sections.length; index += 1) {
     line-height: 1.25;
     overflow-wrap: anywhere;
   }
-  .magazine h1 { font-size: clamp(2rem, 4vw, 3.8rem); letter-spacing: -.035em; }
   .magazine h2 { font-size: clamp(1.5rem, 3vw, 2.2rem); }
+  .magazine h1, .magazine-lead h2 { font-size: clamp(2rem, 4vw, 3.8rem); letter-spacing: -.035em; }
   .magazine h3 { font-size: clamp(1.18rem, 2vw, 1.55rem); }
   .magazine a:hover { text-decoration: underline; text-underline-offset: .22em; }
+  .magazine [data-home-section], .magazine-opening :is(h1, h2) { scroll-margin-top: 7rem; }
+  .magazine-accessible-title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
   .magazine-lead {
     display: grid;
@@ -254,9 +301,9 @@ for (let index = 0; index < sections.length; index += 1) {
   .magazine-story { display: grid; align-content: start; justify-items: start; gap: .44rem; padding-top: .75rem; border-top: 1px solid var(--line); }
   .magazine-story > .magazine-link { margin-top: .2rem; }
 
-  .magazine-opening, .magazine-section { border-top: 1px solid var(--line); padding-block: clamp(1.25rem, 4vw, 2.35rem); scroll-margin-top: 7rem; }
+  .magazine-opening, .magazine-section { border-top: 1px solid var(--line); padding-block: clamp(1.25rem, 4vw, 2.35rem); }
   .magazine-opening { display: grid; justify-items: start; gap: .55rem; margin-top: .7rem; }
-  .magazine-opening--leadless { margin-top: 0; border-top: 0; }
+  .magazine-opening--first { margin-top: 0; border-top: 0; }
   .magazine-opening__links { display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; margin-top: .25rem; }
   .magazine-prose { display: grid; gap: .55rem; max-width: 66ch; }
   .magazine-prose:has(+ .magazine-grid) { margin-bottom: .95rem; }

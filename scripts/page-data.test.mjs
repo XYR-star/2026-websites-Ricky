@@ -27,11 +27,25 @@ test("accepts every supported homepage section and preserves editor array order"
     { id: "about", type: "aboutNote", enabled: true, body: "正文保持原样\n\n第二段" },
     { id: "quote", type: "quote", enabled: true, quote: "" },
     { id: "text", type: "richText", enabled: true, body: "" },
+    { id: "cover", type: "magazineCover", enabled: true, travelSlug: "2026-11-03-暑假九寨行" },
+    { id: "contents", type: "magazineContents", enabled: true, count: 2, linkHref: "/archive" },
+    { id: "intro", type: "homeIntro", enabled: false },
   ];
   const before = structuredClone(data);
   validatePageData("homepage", data);
   assert.deepEqual(data, before);
   assert.equal(data.sections[0].id, "newest");
+});
+
+test("validates legacy layouts and all empty relation values", () => {
+  const data = realData("homepage");
+  for (const travelSlug of [null, "", undefined]) {
+    data.sections[0].travelSlug = travelSlug;
+    assert.doesNotThrow(() => validatePageData("homepage", data));
+  }
+  delete data.layoutVersion;
+  data.sections = data.sections.slice(3);
+  assert.doesNotThrow(() => validatePageData("homepage", data));
 });
 
 test("allows optional legacy intro, note, and secondary text to be missing or blank", () => {
@@ -81,6 +95,10 @@ test("externalOnly excludes local paths and anchors while permitting HTTP and ma
 });
 
 const invalidHomepage = [
+  ["unsupported layout version", (data) => { data.layoutVersion = 2; }, /layoutVersion/],
+  ["duplicate cover section", (data) => { data.sections.push({ ...data.sections[0], id: "second-cover" }); }, /各可添加一块/],
+  ["malformed cover slug", (data) => { data.sections[0].travelSlug = "../draft"; }, /travelSlug/],
+  ["travel slug on the wrong section", (data) => { data.sections[1].travelSlug = "sample"; }, /travelSlug/],
   ["hero object", (data) => { data.hero = null; }, /首页.hero/],
   ["sections array", (data) => { data.sections = {}; }, /首页.sections/],
   ["section object", (data) => { data.sections[0] = null; }, /sections\[1\]/],
@@ -100,11 +118,11 @@ const invalidHomepage = [
   ["string count", (data) => { data.sections[2].count = "3"; }, /\.count/],
   ["non-finite count", (data) => { data.sections[2].count = Infinity; }, /\.count/],
   ["curated item list", (data) => { data.sections[0].items = null; }, /\.items/],
-  ["curated text object", (data) => { data.sections[0].items[0].title = {}; }, /\.title/],
+  ["curated text object", (data) => { data.sections.find(({ type }) => type === "curatedLinks").items[0].title = {}; }, /\.title/],
   ["body array", (data) => { data.sections[1].body = []; }, /\.body/],
   ["hero unsafe href", (data) => { data.hero.primaryLinkHref = "javascript:alert(1)"; }, /primaryLinkHref/],
   ["section unsafe href", (data) => { data.sections[1].linkHref = "//evil.example"; }, /linkHref/],
-  ["curated unsafe href", (data) => { data.sections[0].items[0].href = "data:text/html,x"; }, /\.href/],
+  ["curated unsafe href", (data) => { data.sections.find(({ type }) => type === "curatedLinks").items[0].href = "data:text/html,x"; }, /\.href/],
 ];
 for (const [label, mutate, message] of invalidHomepage) {
   test(`rejects invalid homepage ${label} with a readable field path`, () => {

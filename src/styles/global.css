@@ -1,15 +1,16 @@
 :root {
-  --bg: #f7f2e8;
-  --bg-soft: #eee5d7;
-  --paper: #f9f5ec;
-  --paper-strong: #efe8db;
-  --paper-solid: #fffbf3;
+  --bg: #f4efe7;
+  --bg-soft: #ede6dc;
+  --paper: rgba(255, 250, 244, 0.72);
+  --paper-strong: rgba(255, 249, 242, 0.9);
+  --paper-solid: rgba(255, 249, 242, 0.94);
   --line: rgba(55, 40, 24, 0.14);
   --line-strong: rgba(55, 40, 24, 0.24);
-  --text: #2a251c;
-  --muted: #61594b;
-  --accent: #835238;
-  --accent-soft: #71432d;
+  --text: #1f1a17;
+  --muted: #6e6258;
+  --accent: #8a3f2d;
+  --accent-soft: #b76c4c;
+  --header-bg: rgba(244, 239, 231, 0.72);
   --container: 1120px;
   --content: 760px;
   --serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino,
@@ -20,17 +21,18 @@
 }
 
 html[data-theme="dark"] {
-  --bg: #211f1a;
-  --bg-soft: #302a21;
-  --paper: #25221c;
-  --paper-strong: #312b22;
-  --paper-solid: #2b261e;
+  --bg: #151211;
+  --bg-soft: #201a18;
+  --paper: rgba(34, 28, 26, 0.76);
+  --paper-strong: rgba(41, 34, 31, 0.92);
+  --paper-solid: rgba(37, 31, 29, 0.96);
   --line: rgba(248, 232, 212, 0.12);
   --line-strong: rgba(248, 232, 212, 0.26);
-  --text: #f0e9da;
-  --muted: #c2b8a6;
-  --accent: #ddb798;
-  --accent-soft: #edcfb5;
+  --text: #f3e7d9;
+  --muted: #ccbca9;
+  --accent: #d79072;
+  --accent-soft: #f0b89d;
+  --header-bg: rgba(21, 18, 17, 0.76);
   color-scheme: dark;
 }
 
@@ -48,7 +50,10 @@ body {
   min-height: 100vh;
   margin: 0;
   color: var(--text);
-  background: var(--bg);
+  background:
+    radial-gradient(circle at top left, rgba(183, 108, 76, 0.16), transparent 32%),
+    radial-gradient(circle at 80% 20%, rgba(104, 87, 64, 0.08), transparent 28%),
+    linear-gradient(180deg, #f8f2ea 0%, #f4efe7 45%, #efe7dc 100%);
   font-family: var(--sans);
   line-height: 1.65;
   transition:
@@ -58,6 +63,30 @@ body {
 
 body.has-lightbox {
   overflow: hidden;
+}
+
+html[data-theme="dark"] body {
+  background:
+    radial-gradient(circle at top left, rgba(215, 144, 114, 0.1), transparent 32%),
+    radial-gradient(circle at 80% 20%, rgba(210, 175, 132, 0.06), transparent 26%),
+    linear-gradient(180deg, #171312 0%, #131110 50%, #100e0d 100%);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.2) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.15) 1px, transparent 1px);
+  background-size: 100% 36px, 36px 100%;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.28), transparent 60%);
+  opacity: 0.2;
+}
+
+html[data-theme="dark"] body::before {
+  opacity: 0.08;
 }
 
 a {
@@ -89,7 +118,8 @@ main {
   position: sticky;
   top: 0;
   z-index: 10;
-  background: var(--bg);
+  backdrop-filter: blur(18px);
+  background: var(--header-bg);
   border-bottom: 1px solid var(--text);
 }
 

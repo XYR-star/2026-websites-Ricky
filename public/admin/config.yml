@@ -180,69 +180,99 @@ collections:
         file: src/data/homepage.json
         preview_path: /
         fields:
-          - label: 首页开场
-            name: hero
-            widget: object
-            fields:
-              - label: 链接标记（自动）
-                name: id
-                widget: uuid
-                prefix: section-
-                hint: 保留当前标记，已有段落链接会继续可用。
-              - label: 小标题
-                name: eyebrow
-                widget: string
-                required: false
-                default: ''
-              - label: 标题
-                name: title
-                widget: string
-              - label: 介绍
-                name: intro
-                widget: text
-                required: false
-                default: ''
-              - label: 补充说明
-                name: note
-                widget: text
-                required: false
-                default: ''
-              - label: 主要链接文字
-                name: primaryLinkLabel
-                widget: string
-                required: false
-                default: ''
-              - label: 主要链接地址
-                name: primaryLinkHref
-                widget: string
-                required: false
-                default: ''
-                pattern:
-                  - >-
-                    ^(?:https?://[^\s\\\x00-\x1f\x7f]+|/(?!/)[^\s\\\x00-\x1f\x7f]*|#[A-Za-z][A-Za-z0-9_-]*|mailto:[^@\s\\]+@[^@\s\\]+\.[^@\s\\]+)?$
-                  - '请填写网页地址、以 / 开头的站内路径、#段落标记或 mailto: 邮箱链接。'
-              - label: 次要链接文字
-                name: secondaryLinkLabel
-                widget: string
-                required: false
-                default: ''
-              - label: 次要链接地址
-                name: secondaryLinkHref
-                widget: string
-                required: false
-                default: ''
-                pattern:
-                  - >-
-                    ^(?:https?://[^\s\\\x00-\x1f\x7f]+|/(?!/)[^\s\\\x00-\x1f\x7f]*|#[A-Za-z][A-Za-z0-9_-]*|mailto:[^@\s\\]+@[^@\s\\]+\.[^@\s\\]+)?$
-                  - '请填写网页地址、以 / 开头的站内路径、#段落标记或 mailto: 邮箱链接。'
-          - label: 首页内容
+          - label: 首页布局版本
+            name: layoutVersion
+            widget: hidden
+            required: false
+            default: 1
+          - label: 首页布局
             name: sections
             widget: list
             typeKey: type
             collapsed: true
             summary: '{{fields.title}}'
-            hint: 拖动调整展示顺序；关掉「显示这一块」可暂时隐藏，文字会保留。
+            hint: 拖动调整展示顺序，关闭「显示这一块」可暂时隐藏。杂志封面、继续阅读和首页开场各最多添加一块。
             types:
+              - label: 杂志封面
+                name: magazineCover
+                widget: object
+                summary: 杂志封面
+                fields:
+                  - label: 链接标记（自动）
+                    name: id
+                    widget: uuid
+                    prefix: section-
+                  - label: 显示这一块
+                    name: enabled
+                    widget: boolean
+                    default: true
+                  - label: 封面小标题
+                    name: eyebrow
+                    widget: string
+                    required: false
+                    default: 精选游记
+                  - label: 封面游记
+                    name: travelSlug
+                    widget: relation
+                    collection: travel
+                    value_field: '{{slug}}'
+                    search_fields: [title]
+                    display_fields: [title]
+                    multiple: false
+                    required: false
+                    hint: 选择一篇已发布且有封面的游记。留空时自动选取，所选游记不再可用时也会自动选取。
+              - label: 继续阅读
+                name: magazineContents
+                widget: object
+                summary: '{{fields.title}}'
+                fields:
+                  - label: 链接标记（自动）
+                    name: id
+                    widget: uuid
+                    prefix: section-
+                  - label: 显示这一块
+                    name: enabled
+                    widget: boolean
+                    default: true
+                  - label: 标题
+                    name: title
+                    widget: string
+                    default: 继续阅读
+                  - label: 展示篇数
+                    name: count
+                    widget: number
+                    value_type: int
+                    min: 1
+                    max: 12
+                    default: 2
+                  - label: 链接文字
+                    name: linkLabel
+                    widget: string
+                    required: false
+                    default: 全部归档
+                  - label: 链接地址
+                    name: linkHref
+                    widget: string
+                    required: false
+                    default: /archive
+                    pattern:
+                      - >-
+                        ^(?:https?://[^\s\\\x00-\x1f\x7f]+|/(?!/)[^\s\\\x00-\x1f\x7f]*|#[A-Za-z][A-Za-z0-9_-]*|mailto:[^@\s\\]+@[^@\s\\]+\.[^@\s\\]+)?$
+                      - '请填写网页地址、以 / 开头的站内路径、#段落标记或 mailto: 邮箱链接。'
+              - label: 首页开场
+                name: homeIntro
+                widget: object
+                summary: 首页开场
+                hint: 使用下方「开场文案」的文字。拖动本区块可调整开场位置。
+                fields:
+                  - label: 链接标记（自动）
+                    name: id
+                    widget: uuid
+                    prefix: section-
+                  - label: 显示这一块
+                    name: enabled
+                    widget: boolean
+                    default: true
               - label: 最新博客
                 name: featuredPosts
                 widget: object
@@ -645,6 +675,62 @@ collections:
                     name: body
                     widget: text
                     hint: 段落之间空一行。内容按文字段落展示。
+          - label: 开场文案
+            name: hero
+            widget: object
+            hint: 在这里编辑开场文字。在上方「首页布局」调整开场的位置与显示。
+            fields:
+              - label: 链接标记（自动）
+                name: id
+                widget: uuid
+                prefix: section-
+                hint: 保留当前标记，已有段落链接会继续可用。
+              - label: 小标题
+                name: eyebrow
+                widget: string
+                required: false
+                default: ''
+              - label: 标题
+                name: title
+                widget: string
+              - label: 介绍
+                name: intro
+                widget: text
+                required: false
+                default: ''
+              - label: 补充说明
+                name: note
+                widget: text
+                required: false
+                default: ''
+              - label: 主要链接文字
+                name: primaryLinkLabel
+                widget: string
+                required: false
+                default: ''
+              - label: 主要链接地址
+                name: primaryLinkHref
+                widget: string
+                required: false
+                default: ''
+                pattern:
+                  - >-
+                    ^(?:https?://[^\s\\\x00-\x1f\x7f]+|/(?!/)[^\s\\\x00-\x1f\x7f]*|#[A-Za-z][A-Za-z0-9_-]*|mailto:[^@\s\\]+@[^@\s\\]+\.[^@\s\\]+)?$
+                  - '请填写网页地址、以 / 开头的站内路径、#段落标记或 mailto: 邮箱链接。'
+              - label: 次要链接文字
+                name: secondaryLinkLabel
+                widget: string
+                required: false
+                default: ''
+              - label: 次要链接地址
+                name: secondaryLinkHref
+                widget: string
+                required: false
+                default: ''
+                pattern:
+                  - >-
+                    ^(?:https?://[^\s\\\x00-\x1f\x7f]+|/(?!/)[^\s\\\x00-\x1f\x7f]*|#[A-Za-z][A-Za-z0-9_-]*|mailto:[^@\s\\]+@[^@\s\\]+\.[^@\s\\]+)?$
+                  - '请填写网页地址、以 / 开头的站内路径、#段落标记或 mailto: 邮箱链接。'
       - name: about
         label: 关于我
         file: src/data/about.json

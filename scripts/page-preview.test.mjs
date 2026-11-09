@@ -64,6 +64,35 @@ test("homepage preview follows drag order, ignores legacy order numbers and hide
   assert.equal(JSON.stringify(data), before);
 });
 
+test("magazine preview places cover, contents and opening in the saved order", () => {
+  const tree = render("homepage", { layoutVersion: 1, hero: { title: "开场文字" }, sections: [
+    { id: "contents", type: "magazineContents", enabled: true, title: "本期文章", count: 4 },
+    { id: "cover", type: "magazineCover", enabled: true, eyebrow: "本期封面", travelSlug: "2026-04-21-120-swu" },
+    { id: "intro", type: "homeIntro", enabled: true },
+    { id: "hidden", type: "quote", enabled: false, quote: "不可显示" },
+  ] });
+  assert.deepEqual(nodes(tree, "section").map((node) => node.props["data-section-id"]), ["contents", "cover", "intro"]);
+  assert.deepEqual(nodes(tree, "h1").map(text), ["开场文字"]);
+  assert.deepEqual(nodes(tree, "h2").map(text), ["本期文章", "杂志封面"]);
+  assert.match(text(tree), /最多 4 篇近期文章/);
+  assert.match(text(tree), /本期封面/);
+  assert.match(text(tree), /2026-04-21-120-swu/);
+  assert.doesNotMatch(text(tree), /不可显示/);
+  assert.deepEqual(nodes(tree, "a").map((node) => node.props.href), ["/archive"]);
+});
+
+test("magazine preview respects a hidden opening, automatic cover and cleared archive link", () => {
+  const tree = render("homepage", { layoutVersion: 1, hero: { title: "隐藏开场" }, sections: [
+    { type: "homeIntro", enabled: false },
+    { type: "magazineCover", enabled: true, travelSlug: null },
+    { type: "magazineContents", enabled: true, linkLabel: "", linkHref: "" },
+  ] });
+  assert.doesNotMatch(text(tree), /隐藏开场/);
+  assert.match(text(tree), /自动选取已发布且有封面的游记/);
+  assert.match(text(tree), /最多 2 篇近期文章/);
+  assert.deepEqual(nodes(tree, "a"), []);
+});
+
 test("all page links are safe during incomplete editing, not just after publication", () => {
   const data = { hero: { title: "链接" }, links: [
     { label: "安全", href: "https://example.com" },
