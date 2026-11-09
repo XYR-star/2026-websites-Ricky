@@ -1,0 +1,125 @@
+.column-directory__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.55rem 1rem;
+  margin-bottom: 0.85rem;
+}
+
+.column-directory__head h2 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 1.35rem;
+  font-weight: 500;
+}
+
+.column-directory__list {
+  border-top: 1px solid var(--line-strong);
+}
+
+.column-directory__empty {
+  margin: 1rem 0 0;
+  color: var(--muted);
+}
+
+.column-directory__list > :is(.card, .entry) {
+  display: grid;
+  grid-template-columns: minmax(7rem, 0.26fr) minmax(0, 1fr);
+  grid-template-areas:
+    "meta title"
+    "meta description"
+    "meta links";
+  align-items: start;
+  gap: 0.55rem clamp(1rem, 3vw, 2.5rem);
+  padding: clamp(1.2rem, 3vw, 1.9rem) 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  animation: none;
+  overflow: visible;
+  overflow-wrap: anywhere;
+}
+
+.column-directory__list > :is(.card--with-cover, .card--travel) {
+  grid-template-columns: minmax(7rem, 0.26fr) minmax(0, 1fr) minmax(8rem, 0.4fr);
+  grid-template-areas:
+    "meta title media"
+    "meta description media"
+    "meta links media";
+}
+
+.column-directory__list .entry-meta {
+  grid-area: meta;
+  gap: 0.4rem 0.5rem;
+}
+
+.column-directory__list .entry-meta time {
+  flex-basis: 100%;
+  font-variant-numeric: tabular-nums;
+}
+
+.column-directory__list :is(.card__title, .entry__title) {
+  grid-area: title;
+  margin: 0;
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  line-height: 1.25;
+}
+
+.column-directory__list :is(.card__title, .entry__title) a:hover {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 0.16em;
+}
+
+.column-directory a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.column-directory__list > article > p {
+  grid-area: description;
+  max-width: 48rem;
+  margin: 0;
+  font-size: 1rem;
+}
+
+.column-directory__list .entry-links {
+  grid-area: links;
+}
+
+.column-directory__list .card__media-link {
+  grid-area: media;
+  margin: 0;
+}
+
+.column-directory__list .card__media {
+  aspect-ratio: 4 / 3;
+  border-radius: 2px;
+}
+
+@media (max-width: 44rem) {
+  .column-directory__list > :is(.card, .entry) {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "meta"
+      "title"
+      "description"
+      "links";
+  }
+
+  .column-directory__list > :is(.card--with-cover, .card--travel) {
+    grid-template-columns: minmax(0, 1fr) minmax(5.25rem, 28%);
+    grid-template-areas:
+      "meta meta"
+      "title media"
+      "description description"
+      "links links";
+  }
+
+  .column-directory__list .entry-meta time {
+    flex-basis: auto;
+  }
+}

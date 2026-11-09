@@ -18,21 +18,21 @@ const groups = groupArchiveEntriesByMonth(
 );
 
 const typeLabelMap = {
-  blog: "Blog",
-  research: "Research",
-  travel: "Travel",
+  blog: "博客",
+  research: "科研进展",
+  travel: "游记",
 };
 ---
 
 <SiteLayout title="归档 · Ricky" description="按时间浏览博客、科研进展与游记">
   <section class="shell page-hero">
-    <div class="eyebrow">Archive Calendar</div>
+    <div class="eyebrow">Archive</div>
     <h1>归档</h1>
-    <p>按时间重新找到博客、科研进展和游记，让内容的生长轨迹更容易被看见。</p>
+    <p>按月翻阅博客、科研进展与游记。</p>
   </section>
 
   <section class="shell section archive-grid">
-    <aside class="note-panel archive-calendar">
+    <nav class="archive-calendar" aria-label="归档月份">
       <div class="section-label">月份导航</div>
       <div class="archive-calendar__grid">
         {groups.map((group) => (
@@ -42,23 +42,20 @@ const typeLabelMap = {
           </a>
         ))}
       </div>
-    </aside>
+    </nav>
 
     <div class="stack">
       {groups.map((group) => (
-        <section class="card archive-month" id={group.key}>
+        <section class="archive-month" id={group.key}>
           <div class="section__head">
-            <div>
-              <div class="section-label">Month Archive</div>
-              <h2>{group.label}</h2>
-            </div>
-            <span class="pill">{group.count} 条记录</span>
+            <h2>{group.label}</h2>
+            <span class="meta-row">{group.count} 条记录</span>
           </div>
           <div class="stack">
             {group.items.map((item) => (
               <article class="archive-item">
                 <div class="meta-row">
-                  <span>{formatDate(item.date)}</span>
+                  <time datetime={item.date.toISOString()}>{formatDate(item.date)}</time>
                   <span class="tag">{typeLabelMap[item.type]}</span>
                 </div>
                 <h3 class="entry__title">

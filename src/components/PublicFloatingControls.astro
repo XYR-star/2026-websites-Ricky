@@ -1,14 +1,10 @@
 ---
 const labels = {
-  theme: "切换黑暗模式",
   top: "回到顶部",
 };
 ---
 
 <aside class="floating-rail" aria-label="页面快捷操作" data-public-floating-controls>
-  <button class="floating-rail__button" type="button" data-theme-toggle aria-label={labels.theme} title={labels.theme}>
-    <span class="floating-rail__icon" data-theme-icon>◐</span>
-  </button>
   <button class="floating-rail__button" type="button" data-scroll-top aria-label={labels.top} title={labels.top}>
     <span class="floating-rail__icon">↑</span>
   </button>
@@ -76,10 +72,13 @@ const labels = {
       button.dataset.sectionTarget = section.id;
       button.setAttribute("aria-label", `跳转到${section.dataset.sectionLabel || section.id}`);
       button.title = section.dataset.sectionLabel || section.id;
-      button.innerHTML = `
-        <span class="floating-rail__mark-dot" aria-hidden="true"></span>
-        <span class="floating-rail__label">${section.dataset.sectionLabel || section.id}</span>
-      `;
+      const dot = document.createElement("span");
+      dot.className = "floating-rail__mark-dot";
+      dot.setAttribute("aria-hidden", "true");
+      const label = document.createElement("span");
+      label.className = "floating-rail__label";
+      label.textContent = button.title;
+      button.append(dot, label);
       button.addEventListener("click", () => {
         section.scrollIntoView({ behavior: "smooth", block: "start" });
       });

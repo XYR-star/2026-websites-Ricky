@@ -24,7 +24,7 @@ const indexJson = JSON.stringify(searchIndex).replace(/</g, "\\u003c");
   </section>
 
   <section class="shell section">
-    <div class="card search-panel">
+    <div class="search-panel">
       <label class="section-label" for="site-search-input">关键词</label>
       <input
         id="site-search-input"
@@ -69,7 +69,7 @@ const indexJson = JSON.stringify(searchIndex).replace(/</g, "\\u003c");
     if (input && host && summary && template && index) {
       const entries = JSON.parse(index.textContent || "[]") as SearchEntry[];
       const dateFormat = new Intl.DateTimeFormat("zh-CN", { year: "numeric", month: "short", day: "numeric" });
-      const typeLabels = { blog: "Blog", research: "Research", travel: "Travel" };
+      const typeLabels = { blog: "博客", research: "科研进展", travel: "游记" };
 
       const renderEmpty = (message: string) => {
         const panel = document.createElement("div");

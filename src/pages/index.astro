@@ -5,290 +5,279 @@ import ResearchCard from "../components/ResearchCard.astro";
 import TravelCard from "../components/TravelCard.astro";
 import SiteLayout from "../layouts/SiteLayout.astro";
 import homepageData from "../data/homepage.json";
-import { validatePageData } from "../lib/page-data.mjs";
 import { siteMeta } from "../data/site";
+import { validatePageData } from "../lib/page-data.mjs";
 import {
   getHomepageSectionLabel,
   getOrderedHomepageSections,
   splitHomepageBody,
   type HomepageAboutNoteSection,
   type HomepageContent,
+  type HomepageListSection,
   type HomepageQuoteSection,
   type HomepageSection,
 } from "../lib/homepage";
-import { getVisiblePosts, getVisibleTravelPosts, getVisibleResearchEntries } from "../lib/content";
+import {
+  formatDate,
+  getArchiveEntries,
+  getVisiblePosts,
+  getVisibleResearchEntries,
+  getVisibleTravelPosts,
+} from "../lib/content";
 
 const homepage = validatePageData("homepage", homepageData) as HomepageContent;
 const posts = getVisiblePosts(await getCollection("blog"));
 const research = getVisibleResearchEntries(await getCollection("research"));
 const travel = getVisibleTravelPosts(await getCollection("travel"));
-const blankLine = "\u00A0";
+const sections = getOrderedHomepageSections(homepage.sections);
+const siteOrigin = new URL(siteMeta.siteUrl).origin;
 
-const orderedSections = getOrderedHomepageSections(homepage.sections);
-
-type RenderGroup =
-  | {
-      kind: "featureBand";
-      quote: HomepageQuoteSection;
-      about: HomepageAboutNoteSection;
-    }
-  | {
-      kind: "single";
-      section: HomepageSection;
-    };
-
-const renderGroups: RenderGroup[] = [];
-
-for (let index = 0; index < orderedSections.length; index += 1) {
-  const current = orderedSections[index];
-  const next = orderedSections[index + 1];
-
-  if (current.type === "quote" && next?.type === "aboutNote") {
-    renderGroups.push({
-      kind: "featureBand",
-      quote: current,
-      about: next,
-    });
-    index += 1;
-    continue;
-  }
-
-  renderGroups.push({
-    kind: "single",
-    section: current,
-  });
+function localPath(href: string) {
+  const url = new URL(href, siteOrigin);
+  return url.origin === siteOrigin ? decodeURI(url.pathname).replace(/\/+$/, "") : "";
 }
 
+function listLimit(type: HomepageListSection["type"]) {
+  const section = sections.find((entry): entry is HomepageListSection => entry.type === type);
+  return section ? section.count ?? 3 : 0;
+}
+
+const illustratedTravel = travel.filter((post) => post.data.cover);
+const coversByPath = new Map(illustratedTravel.map((post) => [localPath(`/travel/${post.slug}`), post]));
+// Reordering or changing the CMS recommendations can choose a new lead story.
+const lead = sections
+  .flatMap((section) => section.type === "curatedLinks" ? section.items : [])
+  .map((item) => coversByPath.get(localPath(item.href)))
+  .find(Boolean) ?? (listLimit("travelList") > 0 ? illustratedTravel[0] : undefined);
+const leadHref = lead ? `/travel/${lead.slug}` : "";
+const continued = lead ? getArchiveEntries({
+  blog: posts.slice(0, listLimit("featuredPosts")),
+  research: research.slice(0, listLimit("researchList")),
+  travel: travel.slice(0, listLimit("travelList")),
+}).filter((entry) => entry.href !== leadHref).slice(0, 2) : [];
+const categoryLabels = { blog: "博客", research: "科研进展", travel: "游记" };
+const IntroHeading = lead ? "h2" : "h1";
+
+const publishedArticlePaths = new Set([
+  ...posts.map((entry) => localPath(`/blog/${entry.slug}`)),
+  ...research.map((entry) => localPath(`/research/${entry.slug}`)),
+  ...travel.map((entry) => localPath(`/travel/${entry.slug}`)),
+]);
+
+function recommendationHref(href: string) {
+  const path = localPath(href);
+  // A recommendation can outlive the article it points to. Keep its copy visible.
+  if (/^\/(?:blog|research|travel)\//.test(path) && !publishedArticlePaths.has(path)) return "";
+  return href;
+}
+
+type RenderGroup =
+  | { kind: "featureBand"; quote: HomepageQuoteSection; about: HomepageAboutNoteSection }
+  | { kind: "single"; section: HomepageSection };
+
+const renderGroups: RenderGroup[] = [];
+for (let index = 0; index < sections.length; index += 1) {
+  const current = sections[index];
+  const next = sections[index + 1];
+  if (current.type === "quote" && next?.type === "aboutNote") {
+    renderGroups.push({ kind: "featureBand", quote: current, about: next });
+    index += 1;
+  } else {
+    renderGroups.push({ kind: "single", section: current });
+  }
+}
 ---
 
 <SiteLayout title="Ricky · 写作与科研记录" description={siteMeta.description}>
-  <section class="shell hero" id={homepage.hero.id} data-home-section data-section-label="开场">
-    <div class="hero__content">
-      <div class:list={["eyebrow", { "copy-slot": !homepage.hero.eyebrow }]}>{homepage.hero.eyebrow || blankLine}</div>
-      <h1 class:list={{ "copy-slot": !homepage.hero.title }}>{homepage.hero.title || blankLine}</h1>
-      <p class:list={{ "copy-slot": !homepage.hero.intro }}>{homepage.hero.intro || blankLine}</p>
-      <p class:list={["hero__note", { "copy-slot": !homepage.hero.note }]}>{homepage.hero.note || blankLine}</p>
-      {(homepage.hero.primaryLinkLabel && homepage.hero.primaryLinkHref) ||
-      (homepage.hero.secondaryLinkLabel && homepage.hero.secondaryLinkHref) ? (
-        <div class="hero__actions">
-          {homepage.hero.primaryLinkLabel && homepage.hero.primaryLinkHref && (
-            <a class="hero__action hero__action--primary" href={homepage.hero.primaryLinkHref}>
-              {homepage.hero.primaryLinkLabel}
-            </a>
-          )}
-          {homepage.hero.secondaryLinkLabel && homepage.hero.secondaryLinkHref && (
-            <a class="hero__action" href={homepage.hero.secondaryLinkHref}>
-              {homepage.hero.secondaryLinkLabel}
-            </a>
-          )}
+  <div class="magazine">
+    {lead && (
+      <article class="shell magazine-lead" aria-labelledby="magazine-lead-title">
+        <a class="magazine-lead__media" href={leadHref} aria-label={`阅读${lead.data.title}`}>
+          <img src={lead.data.cover} alt={`${lead.data.title}的封面`} fetchpriority="high" decoding="async" />
+        </a>
+        <div class="magazine-lead__copy">
+          <p class="magazine-kicker">精选游记 · <time datetime={lead.data.date.toISOString().slice(0, 10)}>{formatDate(lead.data.date)}</time></p>
+          <h1 id="magazine-lead-title"><a href={leadHref}>{lead.data.title}</a></h1>
+          {lead.data.description && <p class="magazine-description">{lead.data.description}</p>}
+          <a class="magazine-link" href={leadHref}>阅读全文 <span aria-hidden="true">↗</span></a>
         </div>
-      ) : null}
-    </div>
-  </section>
+      </article>
+    )}
 
-  {renderGroups.map((group) => {
-    if (group.kind === "featureBand") {
-      return (
-        <section class="shell section" id={group.quote.id} data-home-section data-section-label={getHomepageSectionLabel(group.quote)}>
-          <div class="feature-band">
-            <div class="quote-block">
-              <div class:list={["section-label", { "copy-slot": !group.quote.eyebrow }]}>{group.quote.eyebrow || blankLine}</div>
-              <blockquote class:list={{ "copy-slot": !group.quote.quote }}>{group.quote.quote || blankLine}</blockquote>
-            </div>
-            <div class="note-panel" id={group.about.id}>
-              <div class:list={["section-label", { "copy-slot": !group.about.eyebrow }]}>{group.about.eyebrow || blankLine}</div>
-              <p class:list={{ "copy-slot": !group.about.body }}>{group.about.body || blankLine}</p>
-              {group.about.linkLabel && group.about.linkHref && (
-                <a class="section__link" href={group.about.linkHref}>
-                  {group.about.linkLabel}
-                </a>
-              )}
-            </div>
-          </div>
-        </section>
-      );
-    }
-
-    const section = group.section;
-
-    if (section.type === "featuredPosts") {
-      return (
-        <section class="shell section" id={section.id} data-home-section data-section-label={getHomepageSectionLabel(section)}>
-          <div class="section__head">
-            <div>
-              <div class:list={["eyebrow", { "copy-slot": !section.eyebrow }]}>{section.eyebrow || blankLine}</div>
-              <h2 class:list={{ "copy-slot": !section.title }}>{section.title || blankLine}</h2>
-            </div>
-            {section.linkLabel && section.linkHref && (
-              <a class="section__link" href={section.linkHref}>
-                {section.linkLabel}
-              </a>
-            )}
-          </div>
-          <div class="grid grid--three">
-            {posts.slice(0, section.count ?? 3).map((post) => (
-              <PostCard post={post} />
-            ))}
-          </div>
-        </section>
-      );
-    }
-
-    if (section.type === "travelList") {
-      return (
-        <section class="shell section" id={section.id} data-home-section data-section-label={getHomepageSectionLabel(section)}>
-          <div class="section__head">
-            <div>
-              <div class:list={["eyebrow", { "copy-slot": !section.eyebrow }]}>{section.eyebrow || blankLine}</div>
-              <h2 class:list={{ "copy-slot": !section.title }}>{section.title || blankLine}</h2>
-            </div>
-            {section.linkLabel && section.linkHref && (
-              <a class="section__link" href={section.linkHref}>
-                {section.linkLabel}
-              </a>
-            )}
-          </div>
-          <div class="grid grid--three">
-            {travel.slice(0, section.count ?? 3).map((post) => (
-              <TravelCard post={post} />
-            ))}
-          </div>
-        </section>
-      );
-    }
-
-    if (section.type === "researchList") {
-      return (
-        <section class="shell section" id={section.id} data-home-section data-section-label={getHomepageSectionLabel(section)}>
-          <div class="section__head">
-            <div>
-              <div class:list={["eyebrow", { "copy-slot": !section.eyebrow }]}>{section.eyebrow || blankLine}</div>
-              <h2 class:list={{ "copy-slot": !section.title }}>{section.title || blankLine}</h2>
-            </div>
-            {section.linkLabel && section.linkHref && (
-              <a class="section__link" href={section.linkHref}>
-                {section.linkLabel}
-              </a>
-            )}
-          </div>
-          <div class="stack">
-            {research.slice(0, section.count ?? 3).map((item) => (
-              <ResearchCard item={item} />
-            ))}
-          </div>
-        </section>
-      );
-    }
-
-    if (section.type === "curatedLinks") {
-      return (
-        <section class="shell section" id={section.id} data-home-section data-section-label={getHomepageSectionLabel(section)}>
-          <div class="section__head">
-            <div>
-              <div class:list={["eyebrow", { "copy-slot": !section.eyebrow }]}>{section.eyebrow || blankLine}</div>
-              <h2 class:list={{ "copy-slot": !section.title }}>{section.title || blankLine}</h2>
-            </div>
-          </div>
-          <div class="curated-panel">
-            {splitHomepageBody(section.body).length > 0 ? (
-              splitHomepageBody(section.body).map((paragraph) => <p class="curated-panel__intro">{paragraph}</p>)
-            ) : (
-              <p class="curated-panel__intro copy-slot">{blankLine}</p>
-            )}
-            <div class="grid grid--three">
-              {section.items.map((item) =>
-                item.href ? (
-                  <a class="card curated-card fade-in" href={item.href}>
-                    <div class:list={["section-label", { "copy-slot": !item.eyebrow }]}>{item.eyebrow || blankLine}</div>
-                    <h3 class:list={["card__title", { "copy-slot": !item.title }]}>{item.title || blankLine}</h3>
-                    <p class:list={{ "copy-slot": !item.description }}>{item.description || blankLine}</p>
-                    <span class="section__link">从这里开始</span>
-                  </a>
-                ) : (
-                  <div class="card curated-card fade-in">
-                    <div class:list={["section-label", { "copy-slot": !item.eyebrow }]}>{item.eyebrow || blankLine}</div>
-                    <h3 class:list={["card__title", { "copy-slot": !item.title }]}>{item.title || blankLine}</h3>
-                    <p class:list={{ "copy-slot": !item.description }}>{item.description || blankLine}</p>
-                  </div>
-                ),
-              )}
-            </div>
-          </div>
-        </section>
-      );
-    }
-
-    if (section.type === "nowSummary") {
-      return (
-        <section class="shell section" id={section.id} data-home-section data-section-label={getHomepageSectionLabel(section)}>
-          <div class="now-panel homepage-panel">
-            <div class:list={["section-label", { "copy-slot": !section.eyebrow }]}>{section.eyebrow || blankLine}</div>
-            <h2 class:list={["homepage-panel__title", { "copy-slot": !section.title }]}>{section.title || blankLine}</h2>
-            <div class="stack now-panel__body">
-              {splitHomepageBody(section.body).length > 0 ? (
-                splitHomepageBody(section.body).map((paragraph) => <p>{paragraph}</p>)
-              ) : (
-                <p class="copy-slot">{blankLine}</p>
-              )}
-            </div>
-            {section.linkLabel && section.linkHref && (
-              <a class="section__link" href={section.linkHref}>
-                {section.linkLabel}
-              </a>
-            )}
-          </div>
-        </section>
-      );
-    }
-
-    if (section.type === "aboutNote") {
-      return (
-        <section class="shell section" id={section.id} data-home-section data-section-label={getHomepageSectionLabel(section)}>
-          <div class="note-panel homepage-panel">
-            <div class:list={["section-label", { "copy-slot": !section.eyebrow }]}>{section.eyebrow || blankLine}</div>
-            <h2 class:list={["homepage-panel__title", { "copy-slot": !section.title }]}>{section.title || blankLine}</h2>
-            <p class:list={{ "copy-slot": !section.body }}>{section.body || blankLine}</p>
-            {section.linkLabel && section.linkHref && (
-              <a class="section__link" href={section.linkHref}>
-                {section.linkLabel}
-              </a>
-            )}
-          </div>
-        </section>
-      );
-    }
-
-    if (section.type === "quote") {
-      return (
-        <section class="shell section" id={section.id} data-home-section data-section-label={getHomepageSectionLabel(section)}>
-          <div class="quote-block homepage-panel">
-            <div class:list={["section-label", { "copy-slot": !section.eyebrow }]}>{section.eyebrow || blankLine}</div>
-            <blockquote class:list={{ "copy-slot": !section.quote }}>{section.quote || blankLine}</blockquote>
-          </div>
-        </section>
-      );
-    }
-
-    return (
-      <section class="shell section" id={section.id} data-home-section data-section-label={getHomepageSectionLabel(section)}>
-        <div class="note-panel homepage-panel">
-          <div>
-            <div class:list={["section-label", { "copy-slot": !section.eyebrow }]}>{section.eyebrow || blankLine}</div>
-            <h2 class:list={["homepage-panel__title", { "copy-slot": !section.title }]}>{section.title || blankLine}</h2>
-          </div>
-          {"body" in section &&
-            (splitHomepageBody(section.body).length > 0 ? (
-              splitHomepageBody(section.body).map((paragraph) => <p>{paragraph}</p>)
-            ) : (
-              <p class="copy-slot">{blankLine}</p>
-            ))}
-          {section.linkLabel && section.linkHref && (
-            <a class="section__link" href={section.linkHref}>
-              {section.linkLabel}
-            </a>
-          )}
+    {continued.length > 0 && (
+      <section class="shell magazine-continue" aria-label="继续阅读">
+        <div class="magazine-section-head">
+          <h2>继续阅读</h2>
+          <a class="magazine-link" href="/archive">全部归档 <span aria-hidden="true">↗</span></a>
+        </div>
+        <div class="magazine-grid">
+          {continued.map((entry) => (
+            <article class="magazine-story">
+              <p class="magazine-kicker">{categoryLabels[entry.type]}</p>
+              <h3><a href={entry.href}>{entry.title}</a></h3>
+              {entry.description && <p class="magazine-description">{entry.description}</p>}
+            </article>
+          ))}
         </div>
       </section>
-    );
-  })}
+    )}
+
+    <section class:list={["shell magazine-opening", { "magazine-opening--leadless": !lead }]} id={homepage.hero.id} data-home-section data-section-label="开场">
+      {homepage.hero.eyebrow && <p class="magazine-kicker">{homepage.hero.eyebrow}</p>}
+      <IntroHeading>{homepage.hero.title || siteMeta.title}</IntroHeading>
+      {homepage.hero.intro && <p class="magazine-description">{homepage.hero.intro}</p>}
+      {homepage.hero.note && <p class="magazine-description">{homepage.hero.note}</p>}
+      {(homepage.hero.primaryLinkLabel && homepage.hero.primaryLinkHref || homepage.hero.secondaryLinkLabel && homepage.hero.secondaryLinkHref) && (
+        <div class="magazine-opening__links">
+          {homepage.hero.primaryLinkLabel && homepage.hero.primaryLinkHref && <a class="magazine-link" href={homepage.hero.primaryLinkHref}>{homepage.hero.primaryLinkLabel}</a>}
+          {homepage.hero.secondaryLinkLabel && homepage.hero.secondaryLinkHref && <a class="magazine-link" href={homepage.hero.secondaryLinkHref}>{homepage.hero.secondaryLinkLabel}</a>}
+        </div>
+      )}
+    </section>
+
+    {renderGroups.map((group) => {
+      if (group.kind === "featureBand") {
+        return (
+          <section class="shell magazine-section magazine-grid" id={group.quote.id} data-home-section data-section-label={getHomepageSectionLabel(group.quote)}>
+            <div class="magazine-note">
+              {group.quote.eyebrow && <p class="magazine-kicker">{group.quote.eyebrow}</p>}
+              {group.quote.title && <h2>{group.quote.title}</h2>}
+              {group.quote.quote && <blockquote>{group.quote.quote}</blockquote>}
+              {group.quote.linkLabel && group.quote.linkHref && <a class="magazine-link" href={group.quote.linkHref}>{group.quote.linkLabel}</a>}
+            </div>
+            <div class="magazine-note" id={group.about.id}>
+              {group.about.eyebrow && <p class="magazine-kicker">{group.about.eyebrow}</p>}
+              {group.about.title && <h2>{group.about.title}</h2>}
+              {splitHomepageBody(group.about.body).map((paragraph) => <p class="magazine-description">{paragraph}</p>)}
+              {group.about.linkLabel && group.about.linkHref && <a class="magazine-link" href={group.about.linkHref}>{group.about.linkLabel}</a>}
+            </div>
+          </section>
+        );
+      }
+
+      const section = group.section;
+      return (
+        <section class="shell magazine-section" id={section.id} data-home-section data-section-label={getHomepageSectionLabel(section)}>
+          <div class="magazine-section-head">
+            <div>
+              {section.eyebrow && <p class="magazine-kicker">{section.eyebrow}</p>}
+              {section.title && <h2>{section.title}</h2>}
+            </div>
+            {section.linkLabel && section.linkHref && <a class="magazine-link" href={section.linkHref}>{section.linkLabel} <span aria-hidden="true">↗</span></a>}
+          </div>
+
+          {section.type === "featuredPosts" && (posts.length > 0 ? (
+            <div class="magazine-grid magazine-cards">{posts.slice(0, section.count ?? 3).map((post) => <PostCard post={post} />)}</div>
+          ) : <p class="magazine-description">博客文章整理中。</p>)}
+
+          {section.type === "travelList" && (travel.length > 0 ? (
+            <div class="magazine-grid magazine-cards">{travel.slice(0, section.count ?? 3).map((post) => <TravelCard post={post} />)}</div>
+          ) : <p class="magazine-description">游记整理中。</p>)}
+
+          {section.type === "researchList" && (research.length > 0 ? (
+            <div class="magazine-grid magazine-cards">{research.slice(0, section.count ?? 3).map((item) => <ResearchCard item={item} />)}</div>
+          ) : <p class="magazine-description">科研进展整理中。</p>)}
+
+          {"body" in section && <div class="magazine-prose">{splitHomepageBody(section.body).map((paragraph) => <p class="magazine-description">{paragraph}</p>)}</div>}
+          {section.type === "quote" && section.quote && <blockquote>{section.quote}</blockquote>}
+
+          {section.type === "curatedLinks" && (
+            <div class="magazine-grid">
+              {section.items.map((item) => {
+                const href = recommendationHref(item.href);
+                return (
+                  <article class="magazine-story">
+                    {item.eyebrow && <p class="magazine-kicker">{item.eyebrow}</p>}
+                    {item.title && <h3>{href ? <a href={href}>{item.title}</a> : item.title}</h3>}
+                    {item.description && <p class="magazine-description">{item.description}</p>}
+                    {href && <a class="magazine-link" href={href}>从这里开始 <span aria-hidden="true">↗</span></a>}
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      );
+    })}
+  </div>
 </SiteLayout>
+
+<style>
+  .magazine {
+    --magazine-serif: "Songti SC", "Noto Serif CJK SC", "STSong", var(--serif);
+    color: var(--text);
+    padding-block: clamp(1.25rem, 3vw, 2.5rem) 4rem;
+  }
+
+  .magazine :is(h1, h2, h3, p, blockquote) { margin: 0; }
+  .magazine :is(h1, h2, h3) {
+    font-family: var(--magazine-serif);
+    font-weight: 600;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+  .magazine h1 { font-size: clamp(2rem, 4vw, 3.8rem); letter-spacing: -.035em; }
+  .magazine h2 { font-size: clamp(1.5rem, 3vw, 2.2rem); }
+  .magazine h3 { font-size: clamp(1.18rem, 2vw, 1.55rem); }
+  .magazine a:hover { text-decoration: underline; text-underline-offset: .22em; }
+
+  .magazine-lead {
+    display: grid;
+    grid-template-columns: minmax(0, 1.18fr) minmax(0, 1fr);
+    background: var(--paper-solid);
+    border-block: 1px solid var(--line);
+  }
+  .magazine-lead__media { position: relative; min-height: clamp(15rem, 30vw, 22rem); background: var(--bg); }
+  .magazine-lead__media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 47%; }
+  .magazine-lead__copy {
+    display: grid;
+    align-content: center;
+    justify-items: start;
+    gap: .8rem;
+    padding: clamp(1.35rem, 4vw, 3.2rem);
+  }
+  .magazine-kicker { color: var(--accent); font-size: .83rem; font-weight: 600; letter-spacing: .07em; }
+  .magazine-description { color: var(--muted); line-height: 1.72; overflow-wrap: anywhere; }
+  .magazine-link { color: var(--accent); font-size: .9rem; font-weight: 600; overflow-wrap: anywhere; }
+
+  .magazine-continue { padding-block: 1.6rem 1.2rem; }
+  .magazine-section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: .45rem 1.4rem;
+    margin-bottom: .8rem;
+  }
+  .magazine-section-head .magazine-kicker { margin-bottom: .3rem; }
+  .magazine-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.1rem clamp(1.1rem, 4vw, 2.4rem); }
+  .magazine-story { display: grid; align-content: start; justify-items: start; gap: .44rem; padding-top: .75rem; border-top: 1px solid var(--line); }
+  .magazine-story > .magazine-link { margin-top: .2rem; }
+
+  .magazine-opening, .magazine-section { border-top: 1px solid var(--line); padding-block: clamp(1.25rem, 4vw, 2.35rem); scroll-margin-top: 7rem; }
+  .magazine-opening { display: grid; justify-items: start; gap: .55rem; margin-top: .7rem; }
+  .magazine-opening--leadless { margin-top: 0; border-top: 0; }
+  .magazine-opening__links { display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; margin-top: .25rem; }
+  .magazine-prose { display: grid; gap: .55rem; max-width: 66ch; }
+  .magazine-prose:has(+ .magazine-grid) { margin-bottom: .95rem; }
+  .magazine-note { display: grid; align-content: start; justify-items: start; gap: .55rem; }
+  .magazine blockquote { border-inline-start: 2px solid var(--line); padding-inline-start: 1rem; color: var(--muted); font: 500 1.25rem/1.65 var(--magazine-serif); white-space: pre-line; }
+
+  .magazine-cards > :global(.card), .magazine-cards > :global(.entry) {
+    padding: .85rem 0 0;
+    border: 0;
+    border-top: 1px solid var(--line);
+    border-radius: 0;
+    box-shadow: none;
+    background: none;
+  }
+  .magazine-cards :global(.card__media-link) { margin: 0 0 .75rem; }
+  .magazine-cards :global(.card__media) { aspect-ratio: 16 / 9; object-fit: cover; border-radius: 0; }
+  .magazine-cards :global(.card__title), .magazine-cards :global(.entry__title) { overflow-wrap: anywhere; }
+
+  @media (max-width: 660px) {
+    .magazine-lead, .magazine-grid { grid-template-columns: minmax(0, 1fr); }
+    .magazine-lead__media { min-height: 0; aspect-ratio: 16 / 9; }
+    .magazine-lead__copy { padding: 1.2rem 1rem 1.4rem; }
+  }
+</style>
