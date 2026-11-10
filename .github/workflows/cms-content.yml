@@ -19,5 +19,5 @@ jobs:
           ref: ${{ github.event.pull_request.base.sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
-      - name: Validate CMS publication paths
+      - name: Validate CMS publication
         run: node scripts/check-cms-changes.mjs

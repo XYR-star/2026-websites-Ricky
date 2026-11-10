@@ -78,12 +78,12 @@ function normalizeEntry(entry: ContentListEntry): ArchiveEntry {
   if ("tags" in entry.data) {
     return {
       type: "blog",
-      slug: entry.slug,
+      slug: entry.id,
       title: entry.data.title,
       description: entry.data.description,
       date: entry.data.date,
-      href: `/blog/${entry.slug}`,
-      body: entry.body,
+      href: `/blog/${entry.id}`,
+      body: entry.body ?? "",
       tags: entry.data.tags,
     };
   }
@@ -91,24 +91,24 @@ function normalizeEntry(entry: ContentListEntry): ArchiveEntry {
   if ("summary" in entry.data) {
     return {
       type: "research",
-      slug: entry.slug,
+      slug: entry.id,
       title: entry.data.title,
       description: entry.data.summary,
       date: entry.data.date,
-      href: `/research/${entry.slug}`,
-      body: entry.body,
+      href: `/research/${entry.id}`,
+      body: entry.body ?? "",
       tags: [entry.data.project, entry.data.status].filter(Boolean) as string[],
     };
   }
 
   return {
     type: "travel",
-    slug: entry.slug,
+    slug: entry.id,
     title: entry.data.title,
     description: entry.data.description,
     date: entry.data.date,
-    href: `/travel/${entry.slug}`,
-    body: entry.body,
+    href: `/travel/${entry.id}`,
+    body: entry.body ?? "",
     tags: [],
   };
 }
@@ -204,12 +204,12 @@ export function getSearchIndex(items: ArchiveEntry[]) {
   }));
 }
 
-export function getContentNeighbors<T extends { slug: string; data: { date: Date } }>(
+export function getContentNeighbors<T extends { id: string; data: { date: Date } }>(
   items: T[],
   slug: string,
 ) {
   const ordered = sortByDateDesc(items);
-  const index = ordered.findIndex((item) => item.slug === slug);
+  const index = ordered.findIndex((item) => item.id === slug);
 
   if (index === -1) {
     return {
@@ -240,7 +240,7 @@ export function getRelatedPosts(
   limit = 3,
 ) {
   return posts
-    .filter((post) => post.slug !== current.slug)
+    .filter((post) => post.id !== current.id)
     .map((post) => ({
       post,
       score:
@@ -260,7 +260,7 @@ export function getRelatedResearch(
   const currentTags = [current.data.project, current.data.status].filter(Boolean) as string[];
 
   return items
-    .filter((item) => item.slug !== current.slug)
+    .filter((item) => item.id !== current.id)
     .map((item) => ({
       item,
       score:
@@ -280,7 +280,7 @@ export function getRelatedTravel(
   const currentWords = tokenizeText(`${current.data.title} ${current.data.description} ${current.body}`);
 
   return posts
-    .filter((post) => post.slug !== current.slug)
+    .filter((post) => post.id !== current.id)
     .map((post) => ({
       post,
       score:

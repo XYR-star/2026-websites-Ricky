@@ -5,7 +5,6 @@ import { spawn } from "node:child_process";
 import express from "express";
 import multer from "multer";
 import bcrypt from "bcryptjs";
-import { marked } from "marked";
 import {
   adminPasswordHash,
   adminPort,
@@ -35,6 +34,7 @@ import {
 } from "./lib/content.mjs";
 import { getAboutConfig, updateAboutConfig } from "./lib/about.mjs";
 import { getHomepageConfig, updateHomepageConfig } from "./lib/homepage.mjs";
+import { renderMarkdownPreview } from "./lib/preview.mjs";
 import { createJsonStore } from "./lib/store.mjs";
 import {
   buildExpiredSessionCookie,
@@ -105,7 +105,7 @@ function requireCsrf(req, res, next) {
   }
 
   const token = req.headers["x-csrf-token"];
-  if (!req.adminSession || token !== req.adminSession.csrfToken) {
+  if (typeof token !== "string" || !token || token !== req.adminSession?.csrfToken) {
     return jsonError(res, 403, "Invalid CSRF token.");
   }
 
@@ -414,8 +414,7 @@ app.post(
       return jsonError(res, 400, "Only image uploads are allowed.");
     }
 
-    const collection = collections[req.body.collection];
-    if (!collection) {
+    if (typeof req.body.collection !== "string" || !Object.hasOwn(collections, req.body.collection)) {
       return jsonError(res, 400, "Invalid collection.");
     }
 
@@ -439,10 +438,7 @@ app.post("/api/admin/publish", requireAuth, requireCsrf, async (_req, res) => {
 
 app.post("/api/admin/preview", requireAuth, requireCsrf, async (req, res) => {
   try {
-    const html = await marked.parse(String(req.body?.body ?? ""), {
-      gfm: true,
-      breaks: true,
-    });
+    const html = renderMarkdownPreview(String(req.body?.body ?? ""));
     return res.json({ ok: true, html });
   } catch (error) {
     return jsonError(res, 400, error.message);

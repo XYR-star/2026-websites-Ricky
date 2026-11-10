@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { chmodSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, renameSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { execFileSync, spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -140,8 +140,9 @@ test("permits Unicode slugs without accepting traversal or invalid Git refs", ()
 });
 
 const script = fileURLToPath(new URL("./check-cms-changes.mjs", import.meta.url));
+const validPage = JSON.stringify({ hero: { eyebrow: "Journal", title: "Homepage fixture", id: "intro" }, sections: [] });
 
-function runCLI({ mode = "regular", invalidSha = false, page = false } = {}) {
+function runCLI({ mode = "regular", changeType = "add", invalidSha = false, page = false, pageSource, extraPath } = {}) {
   const directory = mkdtempSync(join(tmpdir(), "ricky-cms-guard-"));
   try {
     const git = (...args) => execFileSync("git", args, { cwd: directory, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
@@ -149,19 +150,24 @@ function runCLI({ mode = "regular", invalidSha = false, page = false } = {}) {
     git("config", "user.name", "CMS Guard Test");
     git("config", "user.email", "cms-test@example.invalid");
     writeFileSync(join(directory, "README.md"), "fixture\n");
-    git("add", "README.md");
-    git("commit", "-qm", "base");
-    const base = git("rev-parse", "HEAD");
     const target = join(directory, page ? "src/data/homepage.json" : article());
     mkdirSync(dirname(target), { recursive: true });
-    if (mode === "symlink") symlinkSync("../../../README.md", target);
+    if (changeType !== "add") writeFileSync(target, page ? validPage : "---\ntitle: Test\n---\nOriginal body\n");
+    git("add", ".");
+    git("commit", "-qm", "base");
+    const base = git("rev-parse", "HEAD");
+    if (changeType === "delete") rmSync(target);
+    else if (changeType === "rename") renameSync(target, join(dirname(target), "renamed.md"));
+    else if (mode === "symlink") symlinkSync("../../../README.md", target);
     else {
-      writeFileSync(target, page ? '{"title":"Homepage fixture"}\n' : "---\ntitle: Test\n---\nBody\n");
+      writeFileSync(target, page ? pageSource ?? validPage : "---\ntitle: Test\n---\nBody\n");
       if (mode === "executable") chmodSync(target, 0o755);
     }
+    if (extraPath) writeFileSync(join(directory, extraPath), "unexpected file\n");
     git("add", ".");
     git("commit", "-qm", "article");
     const head = git("rev-parse", "HEAD");
+    git("checkout", "--quiet", "--detach", base);
     const eventPath = join(directory, "event.json");
     const repo = { full_name: "XYR-star/2026-websites-Ricky" };
     writeFileSync(eventPath, JSON.stringify({ pull_request: {
@@ -184,6 +190,21 @@ test("CLI reads Git diff and ordinary-file mode from a real repository", () => {
   assert.match(result.stdout, /CMS content changes passed/);
 });
 
+for (const changeType of ["rename", "delete"]) {
+  test(`CLI rejects an actual article ${changeType}`, () => {
+    const result = runCLI({ changeType });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /only add or update its own content file/);
+  });
+}
+
+test("CLI rejects forbidden paths without echoing pathspecs or workflow commands", () => {
+  const result = runCLI({ extraPath: ":(unknown)file\n::warning::unexpected" });
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /only add or update its own content file/);
+  assert.doesNotMatch(result.stderr + result.stdout, /::warning::unexpected/);
+});
+
 for (const mode of ["symlink", "executable"]) {
   test(`CLI rejects actual ${mode} files`, () => {
     const result = runCLI({ mode });
@@ -196,6 +217,35 @@ test("CLI permits the fixed page JSON using its file collection entry name", () 
   const result = runCLI({ page: true });
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /CMS content changes passed/);
+});
+
+test("CLI accepts a valid page update with the base commit checked out", () => {
+  const result = runCLI({ page: true, changeType: "update", pageSource: validPage.replace("Homepage fixture", "Updated homepage") });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /CMS content changes passed/);
+});
+
+for (const [label, pageSource] of [
+  ["invalid JSON", '{"hero":'],
+  ["invalid page data", '{"title":"Homepage fixture"}'],
+  ["unsafe page link", JSON.stringify({
+    hero: { eyebrow: "Journal", title: "Homepage fixture", id: "intro" },
+    sections: [{ id: "contents", type: "magazineContents", enabled: true, linkHref: "javascript:alert(1)" }],
+  })],
+]) {
+  test(`CLI rejects ${label} from the PR head commit`, () => {
+    const result = runCLI({ page: true, changeType: "update", pageSource });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /CMS page JSON failed validation in src\/data\/homepage\.json/);
+  });
+}
+
+test("CLI keeps newlines in untrusted JSON keys out of workflow command lines", () => {
+  const pageSource = JSON.stringify({ "\n::warning::unexpected": true });
+  const result = runCLI({ page: true, changeType: "update", pageSource });
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /CMS page JSON failed validation/);
+  assert.doesNotMatch(result.stderr + result.stdout, /^\s*::warning::unexpected/m);
 });
 
 for (const mode of ["symlink", "executable"]) {

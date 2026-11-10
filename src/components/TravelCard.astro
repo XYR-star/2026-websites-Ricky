@@ -10,7 +10,7 @@ const { post } = Astro.props;
 ---
 
 <article class="card card--travel fade-in">
-  <a href={`/travel/${post.slug}`} class="card__media-link">
+  <a href={`/travel/${post.id}`} class="card__media-link">
     <img class="card__media card__media--travel" src={post.data.cover} alt={post.data.title} loading="lazy" />
   </a>
   <div class="meta-row entry-meta">
@@ -18,7 +18,7 @@ const { post } = Astro.props;
     <span class="tag">游记</span>
   </div>
   <h3 class="card__title">
-    <a href={`/travel/${post.slug}`}>{post.data.title}</a>
+    <a href={`/travel/${post.id}`}>{post.data.title}</a>
   </h3>
   <p>{post.data.description}</p>
 </article>

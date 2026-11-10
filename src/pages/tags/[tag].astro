@@ -7,7 +7,7 @@ import { getBlogTags, getVisiblePosts } from "../../lib/content";
 export async function getStaticPaths() {
   const tags = getBlogTags(getVisiblePosts(await getCollection("blog")));
   return tags.map((tag) => ({
-    params: { tag: tag.slug },
+    params: { tag: decodeURIComponent(tag.slug) },
     props: { tag },
   }));
 }

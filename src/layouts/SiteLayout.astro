@@ -20,8 +20,9 @@ const { title, description } = Astro.props;
     <slot name="head" />
   </head>
   <body>
+    <a class="skip-to-content" href="#main-content">跳到正文</a>
     <Header />
-    <main>
+    <main id="main-content" tabindex="-1">
       <slot />
     </main>
     <PublicFloatingControls />

@@ -92,7 +92,7 @@ Vercel 继续通过 GitHub 集成部署，构建命令为 `npm run build`，输�
 
 ## 本地开发
 
-建议使用与 CI 一致的 Node.js 22，并从仓库根目录运行：
+建议使用与 CI 一致的 Node.js 24，并从仓库根目录运行：
 
 ```bash
 npm ci

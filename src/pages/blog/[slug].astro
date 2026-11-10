@@ -11,7 +11,7 @@ export async function getStaticPaths() {
   const posts = getVisiblePosts(await getCollection("blog"));
 
   return posts.map((post) => ({
-    params: { slug: post.slug },
+    params: { slug: post.id },
     props: { post },
   }));
 }
@@ -19,9 +19,9 @@ export async function getStaticPaths() {
 const { post } = Astro.props;
 const { Content } = await render(post);
 const posts = getVisiblePosts(await getCollection("blog"));
-const { previous, next } = getContentNeighbors(posts, post.slug);
+const { previous, next } = getContentNeighbors(posts, post.id);
 const related = getRelatedPosts(posts, post).map((item) => ({
-  href: `/blog/${item.slug}`,
+  href: `/blog/${item.id}`,
   title: item.data.title,
   description: item.data.description,
   meta: item.data.tags[0] ?? "Blog",
@@ -36,12 +36,12 @@ const related = getRelatedPosts(posts, post).map((item) => ({
   cover={post.data.cover}
   eyebrow="Essay"
   previous={previous && {
-    href: `/blog/${previous.slug}`,
+    href: `/blog/${previous.id}`,
     title: previous.data.title,
     description: previous.data.description,
   }}
   next={next && {
-    href: `/blog/${next.slug}`,
+    href: `/blog/${next.id}`,
     title: next.data.title,
     description: next.data.description,
   }}

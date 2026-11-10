@@ -14,20 +14,17 @@ const {
 const canonical = new URL(Astro.url.pathname, Astro.site ?? siteMeta.siteUrl);
 const themeInitScript = String.raw`
   (() => {
+    const root = document.documentElement;
+    let saved;
     try {
-      const root = document.documentElement;
-      const saved = localStorage.getItem("ricky-theme");
-      const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      const theme = saved === "dark" || saved === "light"
-        ? saved
-        : (systemDark ? "dark" : "light");
-
-      root.dataset.theme = theme;
-      root.style.colorScheme = theme;
+      saved = localStorage.getItem("ricky-theme");
     } catch (_error) {
-      document.documentElement.dataset.theme = "light";
-      document.documentElement.style.colorScheme = "light";
+      // Theme switching still works when the browser blocks storage.
     }
+    const systemDark = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
+    const theme = saved === "dark" || saved === "light" ? saved : systemDark ? "dark" : "light";
+    root.dataset.theme = theme;
+    root.style.colorScheme = theme;
   })();
 `;
 ---

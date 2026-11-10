@@ -11,7 +11,7 @@ export async function getStaticPaths() {
   const items = getVisibleResearchEntries(await getCollection("research"));
 
   return items.map((item) => ({
-    params: { slug: item.slug },
+    params: { slug: item.id },
     props: { item },
   }));
 }
@@ -20,9 +20,9 @@ const { item } = Astro.props;
 const { Content } = await render(item);
 const researchTags = [item.data.project, item.data.status].filter(Boolean) as string[];
 const items = getVisibleResearchEntries(await getCollection("research"));
-const { previous, next } = getContentNeighbors(items, item.slug);
+const { previous, next } = getContentNeighbors(items, item.id);
 const related = getRelatedResearch(items, item).map((entry) => ({
-  href: `/research/${entry.slug}`,
+  href: `/research/${entry.id}`,
   title: entry.data.title,
   description: entry.data.summary,
   meta: entry.data.project ?? entry.data.status ?? "Research",
@@ -37,12 +37,12 @@ const related = getRelatedResearch(items, item).map((entry) => ({
   eyebrow="Research"
   references={item.data.links}
   previous={previous && {
-    href: `/research/${previous.slug}`,
+    href: `/research/${previous.id}`,
     title: previous.data.title,
     description: previous.data.summary,
   }}
   next={next && {
-    href: `/research/${next.slug}`,
+    href: `/research/${next.id}`,
     title: next.data.title,
     description: next.data.summary,
   }}

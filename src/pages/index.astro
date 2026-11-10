@@ -51,7 +51,7 @@ function listLimit(type: HomepageListSection["type"]) {
 }
 
 const illustratedTravel = travel.filter((post) => post.data.cover);
-const coversByPath = new Map(illustratedTravel.map((post) => [localPath(`/travel/${post.slug}`), post]));
+const coversByPath = new Map(illustratedTravel.map((post) => [localPath(`/travel/${post.id}`), post]));
 const recommendedCover = sections
   .flatMap((section) => section.type === "curatedLinks" ? section.items : [])
   .map((item) => coversByPath.get(localPath(item.href)))
@@ -60,9 +60,13 @@ const cover = sections.find((section) => section.type === "magazineCover");
 const contents = sections.find((section) => section.type === "magazineContents");
 const fallbackCover = recommendedCover ?? (!legacyLayout || listLimit("travelList") > 0 ? illustratedTravel[0] : undefined);
 const lead = cover
-  ? illustratedTravel.find((post) => post.slug === cover.travelSlug) ?? fallbackCover
+  ? illustratedTravel.find((post) => post.id === cover.travelSlug) ?? fallbackCover
   : undefined;
-const leadHref = lead ? `/travel/${lead.slug}` : "";
+const leadHref = lead ? `/travel/${lead.id}` : "";
+const campusCover = "/images/travel/120_swu/1776737551118-6000ce60";
+const leadSrcset = lead?.data.cover === `${campusCover}.jpg`
+  ? `${campusCover}-768.webp 768w, ${campusCover}-1440.webp 1440w`
+  : undefined;
 const continued = contents && (!legacyLayout || lead) ? getArchiveEntries({
   blog: legacyLayout ? posts.slice(0, listLimit("featuredPosts")) : posts,
   research: legacyLayout ? research.slice(0, listLimit("researchList")) : research,
@@ -73,11 +77,23 @@ const headingSection = sections.find((section) => section.type === "homeIntro" |
 const CoverHeading = headingSection?.type === "magazineCover" ? "h1" : "h2";
 const IntroHeading = headingSection?.type === "homeIntro" ? "h1" : "h2";
 const prioritizeCover = sections[0]?.type === "magazineCover";
+const visibleAnchors = new Set(sections
+  .filter((section) => (section.type !== "magazineCover" || lead) &&
+    (section.type !== "magazineContents" || !legacyLayout || continued.length > 0))
+  .map((section) => section.id));
+if (sections.some((section) => section.type === "homeIntro")) visibleAnchors.add(homepage.hero.id);
+
+function openingLink(href?: string) {
+  return href?.startsWith("#") && href !== "#" && !visibleAnchors.has(decodeURI(href.slice(1))) ? "" : href;
+}
+
+const primaryOpeningHref = openingLink(homepage.hero.primaryLinkHref);
+const secondaryOpeningHref = openingLink(homepage.hero.secondaryLinkHref);
 
 const publishedArticlePaths = new Set([
-  ...posts.map((entry) => localPath(`/blog/${entry.slug}`)),
-  ...research.map((entry) => localPath(`/research/${entry.slug}`)),
-  ...travel.map((entry) => localPath(`/travel/${entry.slug}`)),
+  ...posts.map((entry) => localPath(`/blog/${entry.id}`)),
+  ...research.map((entry) => localPath(`/research/${entry.id}`)),
+  ...travel.map((entry) => localPath(`/travel/${entry.id}`)),
 ]);
 
 function recommendationHref(href: string) {
@@ -139,6 +155,8 @@ for (let index = 0; index < sections.length; index += 1) {
             <a class="magazine-lead__media" href={leadHref} aria-label={`阅读${lead.data.title}`}>
               <img
                 src={lead.data.cover}
+                srcset={leadSrcset}
+                sizes={leadSrcset ? "(max-width: 660px) calc(100vw - 2rem), (max-width: 1152px) calc(54vw - 1.1rem), 607px" : undefined}
                 alt={`${lead.data.title}的封面`}
                 loading={prioritizeCover ? undefined : "lazy"}
                 fetchpriority={prioritizeCover ? "high" : undefined}
@@ -191,10 +209,10 @@ for (let index = 0; index < sections.length; index += 1) {
             <IntroHeading id={section.id !== homepage.hero.id ? homepage.hero.id : undefined}>{homepage.hero.title || siteMeta.title}</IntroHeading>
             {homepage.hero.intro && <p class="magazine-description">{homepage.hero.intro}</p>}
             {homepage.hero.note && <p class="magazine-description">{homepage.hero.note}</p>}
-            {(homepage.hero.primaryLinkLabel && homepage.hero.primaryLinkHref || homepage.hero.secondaryLinkLabel && homepage.hero.secondaryLinkHref) && (
+            {(homepage.hero.primaryLinkLabel && primaryOpeningHref || homepage.hero.secondaryLinkLabel && secondaryOpeningHref) && (
               <div class="magazine-opening__links">
-                {homepage.hero.primaryLinkLabel && homepage.hero.primaryLinkHref && <a class="magazine-link" href={homepage.hero.primaryLinkHref}>{homepage.hero.primaryLinkLabel}</a>}
-                {homepage.hero.secondaryLinkLabel && homepage.hero.secondaryLinkHref && <a class="magazine-link" href={homepage.hero.secondaryLinkHref}>{homepage.hero.secondaryLinkLabel}</a>}
+                {homepage.hero.primaryLinkLabel && primaryOpeningHref && <a class="magazine-link" href={primaryOpeningHref}>{homepage.hero.primaryLinkLabel}</a>}
+                {homepage.hero.secondaryLinkLabel && secondaryOpeningHref && <a class="magazine-link" href={secondaryOpeningHref}>{homepage.hero.secondaryLinkLabel}</a>}
               </div>
             )}
           </section>
