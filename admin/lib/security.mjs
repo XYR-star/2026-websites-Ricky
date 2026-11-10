@@ -101,13 +101,16 @@ export function destroySession(sessionsStore, token) {
 export function getSessionFromRequest(req, sessionsStore) {
   const parsed = cookie.parse(req.headers.cookie ?? "");
   const token = parsed[sessionCookieName];
-  if (!token) {
+  if (typeof token !== "string" || !/^[a-f0-9]{64}$/.test(token)) {
     return null;
   }
 
   const sessions = sessionsStore.read();
+  if (!sessions || !Object.hasOwn(sessions, token)) return null;
   const session = sessions[token];
-  if (!session) {
+  if (!session || typeof session.username !== "string" ||
+      typeof session.csrfToken !== "string" || !/^[a-f0-9]{48}$/.test(session.csrfToken) ||
+      !Number.isSafeInteger(session.expiresAt)) {
     return null;
   }
 
@@ -117,7 +120,7 @@ export function getSessionFromRequest(req, sessionsStore) {
     return null;
   }
 
-  return { token, ...session };
+  return { ...session, token };
 }
 
 export function buildSessionCookie(token) {

@@ -4,6 +4,9 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - admin/**
+      - api/**
+      - ops/r2-media-worker.mjs
       - public/admin/**
       - public/cms-trial/**
       - scripts/*.test.mjs
@@ -18,6 +21,9 @@ on:
   push:
     branches: [main]
     paths:
+      - admin/**
+      - api/**
+      - ops/r2-media-worker.mjs
       - public/admin/**
       - public/cms-trial/**
       - scripts/*.test.mjs
@@ -43,7 +49,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
       - run: npm ci --ignore-scripts
       - run: npm run test:cms

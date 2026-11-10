@@ -64,11 +64,21 @@ function serializeFrontmatter(collectionName, payload) {
 }
 
 function ensureCollection(collectionName) {
-  if (!collections[collectionName]) {
+  if (typeof collectionName !== "string" || !Object.hasOwn(collections, collectionName)) {
     throw new Error(`Unsupported collection: ${collectionName}`);
   }
 
   return collections[collectionName];
+}
+
+function contentFilePath(collection, slug) {
+  if (typeof slug !== "string" || !slug || slug === "." || slug === ".." || /[\\/\x00-\x1f\x7f]/.test(slug)) {
+    throw new Error("Invalid content slug.");
+  }
+  const filePath = path.join(collection.dir, `${slug}.md`);
+  const entry = fs.lstatSync(filePath, { throwIfNoEntry: false });
+  if (entry && !entry.isFile()) throw new Error("Content entry is not a regular file.");
+  return filePath;
 }
 
 function validatePayload(collectionName, payload) {
@@ -119,8 +129,9 @@ function parseEntry(filePath) {
 export function listContent(collectionName) {
   const collection = ensureCollection(collectionName);
   const files = fs
-    .readdirSync(collection.dir)
-    .filter((file) => file.endsWith(".md"))
+    .readdirSync(collection.dir, { withFileTypes: true })
+    .filter((file) => file.isFile() && file.name.endsWith(".md"))
+    .map((file) => file.name)
     .sort()
     .reverse();
 
@@ -139,7 +150,7 @@ export function listContent(collectionName) {
 
 export function getContent(collectionName, slug) {
   const collection = ensureCollection(collectionName);
-  const filePath = path.join(collection.dir, `${slug}.md`);
+  const filePath = contentFilePath(collection, slug);
   if (!fs.existsSync(filePath)) {
     return null;
   }
@@ -161,7 +172,7 @@ export function createContent(collectionName, payload) {
   const datePart = formatDateInput(payload.date);
   const baseSlug = slugify(payload.slug || payload.title);
   const entrySlug = `${datePart}-${baseSlug}`;
-  const filePath = path.join(collection.dir, `${entrySlug}.md`);
+  const filePath = contentFilePath(collection, entrySlug);
 
   if (fs.existsSync(filePath)) {
     throw new Error("A content entry with that date and slug already exists.");
@@ -179,7 +190,7 @@ export function updateContent(collectionName, slug, payload) {
   const collection = ensureCollection(collectionName);
   validatePayload(collectionName, payload);
 
-  const filePath = path.join(collection.dir, `${slug}.md`);
+  const filePath = contentFilePath(collection, slug);
   if (!fs.existsSync(filePath)) {
     throw new Error("Content entry not found.");
   }
@@ -194,7 +205,7 @@ export function updateContent(collectionName, slug, payload) {
 
 export function trashContent(collectionName, slug) {
   const collection = ensureCollection(collectionName);
-  const filePath = path.join(collection.dir, `${slug}.md`);
+  const filePath = contentFilePath(collection, slug);
   if (!fs.existsSync(filePath)) {
     throw new Error("Content entry not found.");
   }
@@ -221,7 +232,7 @@ export function trashContent(collectionName, slug) {
 
 export function restoreTrashedContent(item) {
   const collection = ensureCollection(item.collection);
-  const restoredPath = path.join(collection.dir, `${item.slug}.md`);
+  const restoredPath = contentFilePath(collection, item.slug);
 
   if (!fs.existsSync(item.currentPath)) {
     throw new Error("Archived content file not found.");

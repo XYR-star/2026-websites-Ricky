@@ -44,8 +44,16 @@ const labels = {
     function setTheme(theme) {
       root.dataset.theme = theme;
       root.style.colorScheme = theme;
-      localStorage.setItem(themeKey, theme);
       syncThemeButton();
+      try {
+        localStorage.setItem(themeKey, theme);
+      } catch (_error) {
+        // The choice still applies on the current page.
+      }
+    }
+
+    function scrollBehavior() {
+      return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
     }
 
     syncThemeButton();
@@ -55,7 +63,7 @@ const labels = {
     });
 
     topButton?.addEventListener("click", () => {
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({ top: 0, behavior: scrollBehavior() });
     });
 
     if (!rail || !marksHost || sections.length === 0 || window.location.pathname !== "/") {
@@ -80,7 +88,7 @@ const labels = {
       label.textContent = button.title;
       button.append(dot, label);
       button.addEventListener("click", () => {
-        section.scrollIntoView({ behavior: "smooth", block: "start" });
+        section.scrollIntoView({ behavior: scrollBehavior(), block: "start" });
       });
       marksHost.appendChild(button);
       return button;

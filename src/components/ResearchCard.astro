@@ -16,7 +16,7 @@ const { item } = Astro.props;
     {item.data.status && <span class="tag">{item.data.status}</span>}
   </div>
   <h3 class="entry__title">
-    <a href={`/research/${item.slug}`}>{item.data.title}</a>
+    <a href={`/research/${item.id}`}>{item.data.title}</a>
   </h3>
   <p>{item.data.summary}</p>
   {item.data.links.length > 0 && (
