@@ -20,6 +20,8 @@ function environment() {
     CONTENT_SOURCE: astroEnv.CONTENT_SOURCE ?? process.env.CONTENT_SOURCE,
     CMS_URL: astroEnv.CMS_URL ?? process.env.CMS_URL,
     CMS_READ_TOKEN: astroEnv.CMS_READ_TOKEN ?? process.env.CMS_READ_TOKEN,
+    // Read at build execution only; never inline a Vercel identity token.
+    VERCEL_OIDC_TOKEN: process.env.VERCEL_OIDC_TOKEN,
   };
 }
 
@@ -221,7 +223,17 @@ export function getPayloadRequestSettings(env = environment()) {
     throw new Error("Payload content requires a valid, dedicated CMS_READ_TOKEN.");
   }
   const endpoint = `${url.href.replace(/\/+$/, "")}/api/site-content`;
-  return { endpoint, token };
+  // Only Vercel's generated deployment hosts may receive its platform token.
+  // Other CMS hosts and local verification servers keep their existing bearer
+  // authentication; redirects are rejected below for both credentials.
+  const oidcToken = url.protocol === "https:" && url.hostname.endsWith(".vercel.app")
+    ? env.VERCEL_OIDC_TOKEN : undefined;
+  if (oidcToken !== undefined && oidcToken !== "" &&
+      (typeof oidcToken !== "string" || oidcToken.length > 32_768 ||
+       !/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(oidcToken))) {
+    throw new Error("VERCEL_OIDC_TOKEN must be a valid build identity token.");
+  }
+  return { endpoint, token, ...(oidcToken ? { oidcToken } : {}) };
 }
 
 async function responseJson(response, maximumBytes) {
@@ -264,6 +276,7 @@ async function fetchPublishedContent(settings, { fetchImpl, timeoutMs, maximumBy
       headers: {
         Accept: "application/json",
         Authorization: `Bearer ${settings.token}`,
+        ...(settings.oidcToken ? { "x-vercel-trusted-oidc-idp-token": settings.oidcToken } : {}),
       },
       redirect: "error",
       cache: "no-store",
@@ -298,7 +311,8 @@ export function createPayloadContentReader({
 /** Share one published response across Astro's content sync and page-rendering modules. */
 export function getPayloadSiteContent() {
   const settings = getPayloadRequestSettings();
-  const cacheId = `${settings.endpoint}:${createHash("sha256").update(settings.token).digest("hex")}`;
+  const cacheId = `${settings.endpoint}:${createHash("sha256")
+    .update(`${settings.token}\0${settings.oidcToken ?? ""}`).digest("hex")}`;
   const cache = globalThis[snapshotCacheKey] ??= new Map();
   if (!cache.has(cacheId)) {
     cache.set(cacheId, fetchPublishedContent(settings, {

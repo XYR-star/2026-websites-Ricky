@@ -8,6 +8,7 @@ import { dispatchDeploymentRecord, notifyPostPublished, preparePostMedia, protec
 import { prepareMedia } from '../src/lib/public-media.js'
 import { siteContentEndpoint } from '../src/endpoints/siteContent.js'
 import { isPublishedContentRead, withPublishedContentRead } from '../src/access/content.js'
+import { deploymentDB } from './helpers/deployment-db.js'
 
 const admin = { id: 1, collection: 'users', role: 'admin' }
 
@@ -230,30 +231,21 @@ test('a failed durable deployment record aborts publication instead of silently 
 test('deployment dispatch never reads inside the content transaction and sends nothing for rolled-back content', async t => {
   const restore = setEnv({ SITE_DEPLOY_HOOK: 'https://api.vercel.com/v1/integrations/deploy/test-hook' })
   t.after(restore)
-  let committed = false
+  const store = deploymentDB()
   let networkCalls = 0
-  const statuses: string[] = []
   t.mock.method(globalThis, 'fetch', async () => {
-    assert.equal(committed, true)
+    assert.ok(store.state.record)
     networkCalls++
     return Response.json({ job: { id: 'deployment-job' } })
   })
-  const payload = {
-    findByID: async (args: any) => {
-      assert.equal(args.req, undefined)
-      assert.equal(args.overrideAccess, true)
-      if (!committed) throw new Error('Rolled-back/uncommitted outbox record is not visible')
-      return { id: 11, status: 'pending' }
-    },
-    update: async (args: any) => { assert.equal(args.req, undefined); statuses.push(args.data.status); return { id: 11, ...args.data } },
-  }
-  assert.equal(await dispatchDeploymentRecord(payload as any, 11), false)
+  const payload = { db: store.db }
+  assert.deepEqual(await dispatchDeploymentRecord(payload as any, 11), { status: 'missing' })
   assert.equal(networkCalls, 0)
-  assert.deepEqual(statuses, [])
-  committed = true
-  assert.equal(await dispatchDeploymentRecord(payload as any, 11), true)
+  assert.deepEqual(store.state.statuses, [])
+  store.state.record = { id: 11, status: 'pending' }
+  assert.deepEqual(await dispatchDeploymentRecord(payload as any, 11), { status: 'requested', jobId: 'deployment-job' })
   assert.equal(networkCalls, 1)
-  assert.deepEqual(statuses, ['pending', 'requested'])
+  assert.deepEqual(store.state.statuses, ['pending', 'requested'])
 })
 
 test('client-upload media is published from its receipt-bound _objectKey folder without changing original bytes', async t => {

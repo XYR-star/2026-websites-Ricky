@@ -211,6 +211,7 @@ test("all concurrent collection and page reads share exactly one authenticated, 
     calls++;
     assert.equal(url, "https://cms.example.com/api/site-content");
     assert.equal(init.headers.Authorization, `Bearer ${env.CMS_READ_TOKEN}`);
+    assert.equal(init.headers["x-vercel-trusted-oidc-idp-token"], undefined);
     assert.equal(init.redirect, "error");
     assert.equal(init.cache, "no-store");
     assert.ok(init.signal instanceof AbortSignal);
@@ -222,6 +223,75 @@ test("all concurrent collection and page reads share exactly one authenticated, 
   assert.equal(a, b);
   assert.equal(b, c);
   assert.equal(reader(), first);
+});
+
+test("protected Vercel CMS reads carry build OIDC and application credentials on the same non-redirecting request", async () => {
+  const VERCEL_OIDC_TOKEN = "testHeader.testPayload.testSignature";
+  const reader = createPayloadContentReader({
+    env: { ...env, CMS_URL: "https://ricky-cms-v2.vercel.app", VERCEL_OIDC_TOKEN },
+    fetchImpl: async (url, init) => {
+      assert.equal(url, "https://ricky-cms-v2.vercel.app/api/site-content");
+      assert.deepEqual(init.headers, {
+        Accept: "application/json",
+        Authorization: `Bearer ${env.CMS_READ_TOKEN}`,
+        "x-vercel-trusted-oidc-idp-token": VERCEL_OIDC_TOKEN,
+      });
+      assert.equal(init.redirect, "error");
+      assert.equal(init.cache, "no-store");
+      return json();
+    },
+  });
+  const content = await reader();
+  assert.doesNotMatch(JSON.stringify(content), /testHeader|testPayload|testSignature|test-only-read-token/);
+});
+
+test("a Vercel build identity is never sent to local, custom CMS, or lookalike destinations", async () => {
+  for (const CMS_URL of [
+    "http://127.0.0.1:3000", "https://localhost:3000", "https://cms.example.com",
+    "https://vercel.app", "https://cms.vercel.app.attacker.example", "https://fake-vercel.app",
+  ]) {
+    const reader = createPayloadContentReader({
+      env: { ...env, CMS_URL, VERCEL_OIDC_TOKEN: "testHeader.testPayload.testSignature" },
+      fetchImpl: async (_url, init) => {
+        assert.equal(init.headers["x-vercel-trusted-oidc-idp-token"], undefined);
+        assert.equal(init.headers.Authorization, `Bearer ${env.CMS_READ_TOKEN}`);
+        return json();
+      },
+    });
+    await reader();
+  }
+});
+
+test("absent build identities preserve ordinary Vercel bearer reads, while malformed identities fail without disclosure", async () => {
+  for (const VERCEL_OIDC_TOKEN of [undefined, ""]) {
+    await createPayloadContentReader({
+      env: { ...env, CMS_URL: "https://cms.vercel.app", VERCEL_OIDC_TOKEN },
+      fetchImpl: async (_url, init) => {
+        assert.equal(init.headers["x-vercel-trusted-oidc-idp-token"], undefined);
+        return json();
+      },
+    })();
+  }
+  for (const VERCEL_OIDC_TOKEN of ["malformed-private-token", "header.payload.signature\r\nInjected: PRIVATE", {}, "a".repeat(33_000)]) {
+    assert.throws(() => getPayloadRequestSettings({ ...env, CMS_URL: "https://cms.vercel.app", VERCEL_OIDC_TOKEN }),
+      error => error.message === "VERCEL_OIDC_TOKEN must be a valid build identity token.");
+  }
+});
+
+test("platform redirects and failed protected reads never disclose either credential", async () => {
+  const VERCEL_OIDC_TOKEN = "privateHeader.privatePayload.privateSignature";
+  const settings = { ...env, CMS_URL: "https://cms.vercel.app", VERCEL_OIDC_TOKEN };
+  const reader = createPayloadContentReader({ env: settings, fetchImpl: async (_url, init) => {
+    assert.equal(init.redirect, "error");
+    throw new Error(`${env.CMS_READ_TOKEN} ${VERCEL_OIDC_TOKEN}`);
+  } });
+  await assert.rejects(reader(), error => /build was stopped/.test(error.message) &&
+    !error.message.includes(env.CMS_READ_TOKEN) && !error.message.includes(VERCEL_OIDC_TOKEN));
+  const redirect = createPayloadContentReader({ env: settings, fetchImpl: async (_url, init) => {
+    assert.equal(init.redirect, "error");
+    return new Response(null, { status: 302, headers: { location: "https://attacker.example" } });
+  } });
+  await assert.rejects(redirect(), /HTTP 302/);
 });
 
 test("failed requests remain failed for the whole build and never retry or substitute local content", async () => {
@@ -278,13 +348,20 @@ test("response size limits protect both declared lengths and chunked bodies", as
 });
 
 test("the site-wide reader shares its published snapshot with page configuration readers", async () => {
-  const names = ["CONTENT_SOURCE", "CMS_URL", "CMS_READ_TOKEN"];
+  const names = ["CONTENT_SOURCE", "CMS_URL", "CMS_READ_TOKEN", "VERCEL_OIDC_TOKEN"];
   const previous = Object.fromEntries(names.map((name) => [name, process.env[name]]));
   const originalFetch = globalThis.fetch;
   let calls = 0;
   try {
-    Object.assign(process.env, { CONTENT_SOURCE: "payload", CMS_URL: env.CMS_URL, CMS_READ_TOKEN: "site-wide-reader-test-token" });
-    globalThis.fetch = async () => { calls++; return json(); };
+    Object.assign(process.env, {
+      CONTENT_SOURCE: "payload", CMS_URL: "https://cms-reader.vercel.app",
+      CMS_READ_TOKEN: "site-wide-reader-test-token", VERCEL_OIDC_TOKEN: "siteHeader.sitePayload.siteSignature",
+    });
+    globalThis.fetch = async (_url, init) => {
+      calls++;
+      assert.equal(init.headers["x-vercel-trusted-oidc-idp-token"], "siteHeader.sitePayload.siteSignature");
+      return json();
+    };
     const [content, homepage, site] = await Promise.all([
       getPayloadSiteContent(), getPageData("homepage", page("homepage")), getPageData("site", page("site")),
     ]);

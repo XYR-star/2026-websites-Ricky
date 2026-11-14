@@ -19,6 +19,7 @@ const astroPackage = JSON.parse(await readFile(join(project, "node_modules/astro
 const astroBin = join(project, "node_modules/astro", astroPackage.bin.astro);
 const workspace = await mkdtemp(join(tmpdir(), "ricky-payload-build-check-"));
 const token = randomBytes(32).toString("base64url");
+const oidcIdentity = Array.from({ length: 3 }, () => randomBytes(24).toString("base64url")).join(".");
 const fixture = { schemaVersion: 1, articles: {}, pages: {} };
 const fields = {
   blog: ["title", "description", "date", "tags", "cover", "media_id"],
@@ -46,7 +47,8 @@ let requests = 0;
 let wrongRequests = 0;
 const server = createServer((request, response) => {
   requests++;
-  if (request.url !== "/api/site-content" || request.headers.authorization !== `Bearer ${token}`) {
+  if (request.url !== "/api/site-content" || request.headers.authorization !== `Bearer ${token}` ||
+      request.headers["x-vercel-trusted-oidc-idp-token"] !== undefined) {
     wrongRequests++;
     response.writeHead(401).end();
     return;
@@ -70,6 +72,7 @@ const env = {
   CONTENT_SOURCE: "payload",
   CMS_URL: `http://127.0.0.1:${address.port}`,
   CMS_READ_TOKEN: token,
+  VERCEL_OIDC_TOKEN: oidcIdentity,
   ASTRO_TELEMETRY_DISABLED: "1",
   NO_COLOR: "1",
 };
@@ -93,8 +96,11 @@ async function assertNoTokenLeak(directory) {
     const path = join(directory, entry.name);
     if (entry.isDirectory()) checkedFiles += await assertNoTokenLeak(path);
     else if (entry.isFile()) {
-      assert.equal((await readFile(path)).includes(Buffer.from(token)), false,
-        `The server-only content token leaked into a public build file: ${path}`);
+      const content = await readFile(path);
+      for (const secret of [token, oidcIdentity]) {
+        assert.equal(content.includes(Buffer.from(secret)), false,
+          `A server-only content or build identity token leaked into a public build file: ${path}`);
+      }
       checkedFiles++;
     }
   }
@@ -105,6 +111,7 @@ try {
   const output = join(workspace, "published");
   const successful = await build(output);
   assert.equal(successful.code, 0, successful.log);
+  for (const secret of [token, oidcIdentity]) assert.ok(!successful.log.includes(secret));
   assert.equal(wrongRequests, 0, "The build must authenticate its only content request.");
   assert.equal(requests, 1, "Collections and page configuration must share one response per build.");
 
@@ -132,7 +139,7 @@ try {
     assert.equal(requests, 1);
     assert.equal(await stat(join(failedOutput, "index.html")).then(() => true, () => false), false,
       "A failed CMS read must not produce a homepage from local fallback content.");
-    assert.ok(!failed.log.includes(token));
+    for (const secret of [token, oidcIdentity]) assert.ok(!failed.log.includes(secret));
     results.push({ mode, exitCode: failed.code, authenticatedRequests: requests, publishedHomepage: false });
   }
   console.log(JSON.stringify({ fixtureOnly: true, liveDatabaseVerified: false, results, temporaryOutput: workspace }, null, 2));

@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto'
+import { sql } from '@payloadcms/db-postgres'
 import { APIError, type CollectionAfterChangeHook, type CollectionAfterDeleteHook, type CollectionBeforeChangeHook, type GlobalAfterChangeHook, type GlobalBeforeChangeHook, type GlobalBeforeOperationHook, type Payload, type PayloadRequest } from 'payload'
 import { isContentAdmin } from '../access/content'
 import { referencedMediaIDs } from '../lib/media-policy'
@@ -40,31 +41,52 @@ export const preparePostMedia: CollectionBeforeChangeHook = async ({ data, origi
   return { ...data, media_id }
 }
 
-/** Runs only after the content transaction is committed, with no inherited req/transaction. */
-export async function dispatchDeploymentRecord(payload: Payload, id: string | number): Promise<boolean> {
-  let record
+export type DeploymentDispatchResult = { status: 'requested' | 'in-flight' | 'not-configured' | 'failed' | 'missing'; jobId?: string }
+// The second advisory-lock key is the serial deployment ID. Transaction locks
+// release on commit, rollback or connection loss, including with PgBouncer's
+// transaction pooling. Never replace this with a session or in-memory lock.
+const DEPLOYMENT_LOCK_NAMESPACE = 0x5249434b
+
+/** Runs only after content commit, on its own DB transaction with no inherited req. */
+export async function dispatchDeploymentRecord(payload: Payload, id: string | number): Promise<DeploymentDispatchResult> {
+  const numericID = Number(id)
+  if (!Number.isInteger(numericID) || numericID <= 0 || numericID > 2_147_483_647) return { status: 'missing' }
   try {
-    record = await payload.findByID({ collection: 'deployments', id, depth: 0, overrideAccess: true })
-  } catch { return false } // A rolled-back transaction has no outbox row to dispatch.
-  if (record.status === 'requested') return true
-  const hook = process.env.SITE_DEPLOY_HOOK?.trim()
-  if (!hook) {
-    await payload.update({ collection: 'deployments', id, data: { status: 'not-configured', message: '预览部署连接尚未配置，内容仍保存在 v2 数据库。' }, overrideAccess: true })
-    return false
-  }
-  try {
-    const url = new URL(hook)
-    if (url.origin !== 'https://api.vercel.com' || !url.pathname.startsWith('/v1/integrations/deploy/')) throw new Error('Invalid deployment hook.')
-    await payload.update({ collection: 'deployments', id, data: { status: 'pending', message: '内容已提交，正在发送网站更新请求。' }, overrideAccess: true })
-    const response = await fetch(url, { method: 'POST', redirect: 'error', signal: AbortSignal.timeout(20_000), cache: 'no-store' })
-    if (!response.ok) throw new Error('Deploy request rejected.')
-    const result = await response.json() as { job?: { id?: string } }
-    await payload.update({ collection: 'deployments', id, data: { status: 'requested', jobId: result.job?.id || '', message: 'Vercel 已接收部署请求；构建成功才表示网站已更新。' }, overrideAccess: true })
-    return true
-  } catch {
-    await payload.update({ collection: 'deployments', id, data: { status: 'failed', message: '网站更新请求未确认成功。内容已保留，可从此记录重试。' }, overrideAccess: true })
-    return false
-  }
+    return await payload.db.drizzle.transaction(async transaction => {
+      const lock = await transaction.execute(sql`SELECT pg_try_advisory_xact_lock(${DEPLOYMENT_LOCK_NAMESPACE}, ${numericID}) AS acquired`)
+      if (lock.rows[0]?.acquired !== true) return { status: 'in-flight' }
+      const found = await transaction.execute(sql`SELECT id, status, job_id AS "jobId" FROM deployments WHERE id = ${numericID} LIMIT 1`)
+      const record = found.rows[0]
+      if (!record) return { status: 'missing' } // Rolled-back content has no committed outbox row.
+      if (record.status === 'requested') return { status: 'requested', ...(typeof record.jobId === 'string' && record.jobId ? { jobId: record.jobId } : {}) }
+      const update = async (status: 'pending' | 'requested' | 'not-configured' | 'failed', message: string, jobId?: string) => {
+        await transaction.execute(sql`UPDATE deployments SET status = ${status}::enum_deployments_status, message = ${message},
+          job_id = ${jobId ?? null}, updated_at = now() WHERE id = ${numericID}`)
+      }
+      const hook = process.env.SITE_DEPLOY_HOOK?.trim()
+      if (!hook) {
+        await update('not-configured', '预览部署连接尚未配置，内容仍保存在 v2 数据库。')
+        return { status: 'not-configured' }
+      }
+      try {
+        const url = new URL(hook)
+        if (url.origin !== 'https://api.vercel.com' || !url.pathname.startsWith('/v1/integrations/deploy/')) throw new Error('Invalid deployment hook.')
+        await update('pending', '内容已提交，正在发送网站更新请求。')
+        const response = await fetch(url, { method: 'POST', redirect: 'error', signal: AbortSignal.timeout(20_000), cache: 'no-store' })
+        if (!response.ok) throw new Error('Deploy request rejected.')
+        const result = await response.json() as { job?: { id?: unknown } }
+        const jobId = typeof result.job?.id === 'string' ? result.job.id : undefined
+        await update('requested', 'Vercel 已接收部署请求；构建成功才表示网站已更新。', jobId)
+        return { status: 'requested', ...(jobId ? { jobId } : {}) }
+      } catch {
+        // A provider timeout can have an ambiguous outcome. Preserve the content
+        // and record; the lock prevents concurrent sends, not remote exactly-once
+        // delivery after a lost response or a process crash.
+        await update('failed', '网站更新请求未确认成功。内容已保留；重试前可先检查 Vercel 是否已接收。')
+        return { status: 'failed' }
+      }
+    })
+  } catch { return { status: 'failed' } }
 }
 
 async function queueBuild(req: PayloadRequest, eventKey: string, label: string): Promise<void> {
@@ -143,11 +165,13 @@ export async function retryDeployment(req: PayloadRequest): Promise<Response> {
   if (req.headers.get('x-cms-request') !== '1' || !serverOrigins().includes(req.headers.get('origin') || '')) return Response.json({ error: '请求来源无效。' }, { status: 403, headers })
   const id = req.routeParams?.id
   if (typeof id !== 'string' || !/^[0-9]+$/.test(id)) return Response.json({ error: '发布记录无效。' }, { status: 400, headers })
-  await req.payload.findByID({ collection: 'deployments', id, depth: 0, overrideAccess: false, req })
+  const record = await req.payload.findByID({ collection: 'deployments', id, depth: 0, overrideAccess: false, req })
+  if (record.status === 'requested') return Response.json({ status: 'requested', message: 'Vercel 已接收此记录的部署请求，请查看构建结果。', jobId: record.jobId || undefined }, { headers })
   if (!process.env.SITE_DEPLOY_HOOK?.trim()) return Response.json({ error: 'v2 预览部署连接尚未配置；内容仍保存在数据库中。' }, { status: 503, headers })
-  // This custom endpoint has no enclosing content-write transaction. Reset the
-  // committed outbox row, then dispatch through a fresh system request.
-  await req.payload.update({ collection: 'deployments', id, data: { status: 'pending' }, overrideAccess: true })
-  const sent = await dispatchDeploymentRecord(req.payload, id)
-  return Response.json(sent ? { message: '部署请求已发送；构建成功后网站才会更新。' } : { error: '网站更新请求失败，已保存的内容仍保留。' }, { status: sent ? 200 : 502, headers })
+  // The independent dispatcher owns the entire locked read/send/update. Do not
+  // reset a requested row here or race another instance outside that lock.
+  const result = await dispatchDeploymentRecord(req.payload, id)
+  if (result.status === 'requested') return Response.json({ ...result, message: '部署请求已发送；构建成功后网站才会更新。' }, { headers })
+  if (result.status === 'in-flight') return Response.json({ status: 'in-flight', message: '此记录正在发送更新请求，请稍后刷新发布记录。' }, { status: 202, headers })
+  return Response.json({ error: '网站更新请求未确认成功，已保存的内容仍保留。' }, { status: result.status === 'missing' ? 404 : result.status === 'not-configured' ? 503 : 502, headers })
 }
