@@ -23,21 +23,21 @@
 | Neon `ricky-cms-v2-db` | 已创建并连接独立项目，核对为 `free_v3` 免费方案 |
 | 新私有 R2 桶和凭据 | 按用户决定延后配置，新上传关闭；已导入的旧图片可复用 |
 | 数据库迁移、管理员初始化、真实文章导入 | 已完成；6 篇正式文章、6 组页面、3 个旧素材引用 |
-| Payload 后台部署 | 独立暂存部署已 `READY`；尚未绑定最终后台别名 |
+| Payload 后台部署 | 独立试用部署已 `READY`，固定地址 `ricky-cms-v2.vercel.app` 已指向修正版 |
 | 远程登录与浏览器验收 | 远程 HTTP 登录、浏览器和手机验收尚未完成 |
 | 本机生产构建 HTTP 验收 | 登录、会话 Cookie、旧图及私稿预览、草稿续写、CSRF 与公开接口共 16 项通过 |
-| Astro 内容源与发布钩子 | 尚未连接真实 v2 内容源预览和部署钩子；后台操作不会更新 v1 网站 |
+| Astro 内容源与发布钩子 | 真实数据库→原生 HTTP→Astro 本机构建已通过；云端前台与部署钩子尚未切换 |
 | 真实数据库验证与内容导出 | 23 项受控检查通过；已导出并核验 8 份内容 JSON 与校验清单的权限、校验和 |
 | 邮件与密码恢复 | 关闭；尚未连接邮件服务 |
 | 正式域名、Decap、上传 Worker | 继续服务 v1 |
 
 Neon 已核对采用 `free_v3` 免费方案；认证由 Payload 提供，本版不依赖额外 Neon Auth 和 Realtime。免费额度以平台当前套餐为准。
 
-当前暂存部署为 [`ricky-cms-v2-9blupa0j2-xyr-stars-projects.vercel.app`](https://ricky-cms-v2-9blupa0j2-xyr-stars-projects.vercel.app)，部署编号 `dpl_GucvweSNufRMnHFdbgRg6XFec1JA`。这是独立 CMS 的验证地址，尚未完成远程登录验收，也没有接管正式网站。
+试用后台入口为 [`ricky-cms-v2.vercel.app/admin`](https://ricky-cms-v2.vercel.app/admin)，当前部署编号 `dpl_CuWsnrRmWdGxE5Sn5fpXJxM8MC41`，保留 Vercel 访问保护。当前网络未能完成远程 HTTP 和浏览器验收；该地址由平台确认绑定到修正版，没有接管个人站域名。登录资料只保存在本机私有文件，不进入仓库。
 
 ## 结构
 
-下图展示完整目标链路。当前数据库与独立 CMS 暂存部署已连接；私有 R2 新上传和 Astro 发布钩子尚未接入。
+下图展示完整目标链路。当前数据库与独立 CMS 试用部署已连接；私有 R2 新上传和 Astro 发布钩子尚未接入。
 
 ```mermaid
 flowchart TD

@@ -163,7 +163,7 @@ export interface User {
   collection: 'users';
 }
 /**
- * 草稿仅在后台可见。发布或撤稿后，网站还需要等待部署成功。
+ * 新版试用：草稿和发布版本保存在独立后台。正式站接入完成后才会随发布更新。
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "posts".
@@ -225,7 +225,7 @@ export interface Post {
   _status?: ('draft' | 'published') | null;
 }
 /**
- * 原图保存，不压缩。新素材保持私有，发布文章时才复制被引用的图片到公开素材桶。
+ * 现在可以复用已导入的旧图片；新图片上传将在完成存储配置后开放。
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media".
@@ -490,7 +490,7 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   createdAt?: T;
 }
 /**
- * 保存草稿不会改变正式网站。发布后等待网站部署成功。
+ * 新版试用：页面配置保存在独立后台。正式站接入完成后才会随发布更新。
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "homepage".
@@ -708,7 +708,7 @@ export interface Homepage {
   createdAt?: string | null;
 }
 /**
- * 保存草稿不会改变正式网站。发布后等待网站部署成功。
+ * 新版试用：页面配置保存在独立后台。正式站接入完成后才会随发布更新。
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "about".
@@ -747,7 +747,7 @@ export interface About {
   createdAt?: string | null;
 }
 /**
- * 保存草稿不会改变正式网站。发布后等待网站部署成功。
+ * 新版试用：页面配置保存在独立后台。正式站接入完成后才会随发布更新。
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "now".
@@ -768,7 +768,7 @@ export interface Now {
   createdAt?: string | null;
 }
 /**
- * 保存草稿不会改变正式网站。发布后等待网站部署成功。
+ * 新版试用：页面配置保存在独立后台。正式站接入完成后才会随发布更新。
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "projects".
@@ -793,7 +793,7 @@ export interface Project {
   createdAt?: string | null;
 }
 /**
- * 保存草稿不会改变正式网站。发布后等待网站部署成功。
+ * 新版试用：页面配置保存在独立后台。正式站接入完成后才会随发布更新。
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "tracks".
@@ -814,7 +814,7 @@ export interface Track {
   createdAt?: string | null;
 }
 /**
- * 保存草稿不会改变正式网站。发布后等待网站部署成功。
+ * 新版试用：页面配置保存在独立后台。正式站接入完成后才会随发布更新。
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "site".
