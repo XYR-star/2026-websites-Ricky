@@ -2,7 +2,9 @@
 
 > 当前正式站保持 **v1.0.0**（`release/v1`，`d5b026c`）。本分支 `feat/payload-v2` 正在开发 Payload＋Postgres 后台，尚未切换正式站。v1 恢复说明见 [固定版本说明](ops/v1-baseline.md)，v2 配置、验证与待办见 [v2 开发说明](cms/README.md)。
 
-v2 将文章、草稿、版本和页面配置交给独立 CMS 管理，保留现有 Astro 页面与 R2 素材地址。前台缺省仍使用 v1 文件；只有显式设置 `CONTENT_SOURCE=payload` 才读取新后台。真实数据库与私有 R2 配置未完成前，不应切换该开关或停用 Decap。
+v2 将文章、草稿、版本和页面配置交给独立 CMS 管理，保留现有 Astro 页面与 R2 素材地址。[新版后台](https://ricky-cms-v2.vercel.app/admin)与[独立 v2 前台](https://ricky-site-v2.vercel.app/)已接通数据库、私有原图、发布后的公开图片及自动构建，仍保留访问保护。正式域名继续使用 v1；前台缺省使用 v1 文件，只有独立 v2 项目显式设置 `CONTENT_SOURCE=payload` 才读取新后台。
+
+以下原有维护说明对应 v1。v2 的部署、权限与尚未验收的项目以 [CMS 开发说明](cms/README.md)及[验证记录](ops/v2-validation.md)为准，当前不应停用正式站 Decap。
 
 一个基于 Astro 的中文个人网站，用来记录博客、研究日志、游记，以及长期项目和近况。日常内容通过线上后台编辑，布局和功能通过代码仓库维护。
 
