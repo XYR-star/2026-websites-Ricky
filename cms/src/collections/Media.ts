@@ -36,7 +36,8 @@ export const Media: CollectionConfig = {
     beforeChange: [({ data, req, context, operation, originalDoc }) => {
       if (context.importV1 || context.preparePublicMedia) return data
       if (!isContentAdmin(req)) throw new APIError('请先登录素材后台。', 403)
-      if (!storageConfig()) throw new APIError('尚未连接私有 R2 素材桶，上传暂未启用。', 503)
+      // Existing descriptions remain editable while new uploads are disabled.
+      if ((operation === 'create' || req.file) && !storageConfig()) throw new APIError('尚未连接私有 R2 素材桶，上传暂未启用。', 503)
       if (operation === 'create' && !req.file && !data.filename) throw new APIError('请先完成图片上传，再保存素材。', 400)
       if (operation === 'update' && (req.file || (data.filename && data.filename !== originalDoc?.filename))) {
         throw new APIError('原图保持不变。请上传一份新素材，再替换文章中的图片引用。', 409)
