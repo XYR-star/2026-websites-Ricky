@@ -1,9 +1,9 @@
 ---
 import SiteLayout from "../layouts/SiteLayout.astro";
 import tracksData from "../data/tracks.json";
-import { validatePageData } from "../lib/page-data.mjs";
+import { getPageData } from "../lib/payload-content.mjs";
 
-const tracks = validatePageData("tracks", tracksData) as typeof tracksData;
+const tracks = await getPageData("tracks", tracksData) as typeof tracksData;
 ---
 
 <SiteLayout title={`${tracks.hero.title} · Ricky`} description={tracks.hero.intro}>

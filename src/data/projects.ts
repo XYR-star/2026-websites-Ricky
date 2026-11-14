@@ -1,5 +1,5 @@
 import projectsData from "./projects.json";
-import { validatePageData } from "../lib/page-data.mjs";
+import { getPageData } from "../lib/payload-content.mjs";
 
-export const projectsPage = validatePageData("projects", projectsData) as typeof projectsData;
+export const projectsPage = await getPageData("projects", projectsData) as typeof projectsData;
 export const projects = projectsPage.items;

@@ -6,7 +6,7 @@ import TravelCard from "../components/TravelCard.astro";
 import SiteLayout from "../layouts/SiteLayout.astro";
 import homepageData from "../data/homepage.json";
 import { siteMeta } from "../data/site";
-import { validatePageData } from "../lib/page-data.mjs";
+import { getPageData } from "../lib/payload-content.mjs";
 import {
   getHomepageLayout,
   getHomepageSectionLabel,
@@ -26,7 +26,7 @@ import {
   getVisibleTravelPosts,
 } from "../lib/content";
 
-const homepage = validatePageData("homepage", homepageData) as HomepageContent;
+const homepage = await getPageData("homepage", homepageData) as HomepageContent;
 const posts = getVisiblePosts(await getCollection("blog"));
 const research = getVisibleResearchEntries(await getCollection("research"));
 const travel = getVisibleTravelPosts(await getCollection("travel"));
