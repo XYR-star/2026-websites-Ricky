@@ -8,7 +8,9 @@ export const Media: CollectionConfig = {
   admin: {
     group: '内容', useAsTitle: 'alt',
     defaultColumns: ['alt', 'filename', 'publicUrl', 'updatedAt'],
-    description: '原图保存，不压缩。新素材保持私有，发布文章时才复制被引用的图片到公开素材桶。',
+    description: storageConfig()
+      ? '原图保存，不压缩。新素材保持私有，发布文章时才复制被引用的图片到公开素材桶。'
+      : '现在可以复用已导入的旧图片；新图片上传将在完成存储配置后开放。',
   },
   access: {
     create: ({ req }) => isContentAdmin(req) && Boolean(storageConfig()),

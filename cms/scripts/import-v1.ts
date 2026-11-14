@@ -3,7 +3,7 @@ import { pathToFileURL } from 'node:url'
 import { isDeepStrictEqual } from 'node:util'
 import type { Payload, PayloadRequest } from 'payload'
 import type { Post } from '../src/payload-types'
-import { loadLocalEnvironment, verifyEnvironment } from './load-env'
+import { finishCLI, loadLocalEnvironment, verifyEnvironment } from './load-env'
 import {
   allLegacyMedia, assertMarkdownRoundTrip, readFrozenV1Source,
   type FrozenArticle, type FrozenV1Source,
@@ -188,10 +188,10 @@ export async function main(args = process.argv.slice(2)): Promise<void> {
 }
 
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
-  main().catch(error => {
+  main().then(() => finishCLI()).catch(error => {
     const safeMessage = error instanceof Error && error.message.startsWith('v1 导入预检失败：')
       ? error.message : 'v1 导入未完成。请核对环境、管理员及数据库状态；原稿未修改，可修正后幂等重试。'
     console.error(safeMessage)
-    process.exitCode = 1
+    return finishCLI(1)
   })
 }

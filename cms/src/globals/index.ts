@@ -28,7 +28,9 @@ const links = (name: string, label: string): Field => ({ name, label, type: 'arr
 
 function page(slug: string, label: string, fields: Field[]): GlobalConfig {
   return {
-    slug, label, admin: { group: '页面与站点', description: '保存草稿不会改变正式网站。发布后等待网站部署成功。' },
+    slug, label, admin: { group: '页面与站点', description: process.env.SITE_DEPLOY_HOOK?.trim()
+      ? '保存草稿不会改变正式网站。发布后等待网站部署成功。'
+      : '新版试用：页面配置保存在独立后台。正式站接入完成后才会随发布更新。' },
     access: { read: readPublishedGlobal, update: adminOnly, readVersions: adminOnly },
     versions: { drafts: { autosave: { interval: 2000 } }, max: 30 },
     hooks: { beforeOperation: [protectPublishedGlobal], beforeChange: [captureGlobalPublication], afterChange: [notifyGlobalPublished] },

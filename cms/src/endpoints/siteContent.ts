@@ -1,6 +1,6 @@
 import { timingSafeEqual } from 'node:crypto'
 import type { Endpoint, PayloadRequest } from 'payload'
-import { withPublishedContentRead } from '../access/content.js'
+import { isPublishedContentRead, withPublishedContentRead } from '../access/content.js'
 import { exportPageData, PAGE_NAMES, type PageName } from '../lib/page-data.js'
 import { getContentEditorConfig, getPublishedMediaURL, isPublicAssetURL, serializeContentBody, type MediaDocument, type MediaReference } from '../lib/content-serialization.js'
 
@@ -23,10 +23,19 @@ function text(value: unknown, label: string): string {
   return value
 }
 
+async function publishedRead<T>(req: PayloadRequest, step: string, read: () => Promise<T>): Promise<T> {
+  try { return await read() } catch (error) {
+    // Diagnose boundaries without logging article text, URLs or provider errors.
+    req.payload.logger.error({ msg: 'Published content read step failed', step,
+      readerScopeActive: isPublishedContentRead(req), errorName: error instanceof Error ? error.name : 'UnknownError' })
+    throw error
+  }
+}
+
 async function readPublishedMedia(reference: MediaReference, req: PayloadRequest): Promise<MediaDocument> {
   const id = typeof reference === 'object' && reference ? reference.id : reference
   if (typeof id !== 'string' && typeof id !== 'number') throw new Error('无效的媒体关联。')
-  const doc = await req.payload.findByID({ collection: 'media', id, req, depth: 0, overrideAccess: false, draft: false })
+  const doc = await publishedRead(req, 'media', () => req.payload.findByID({ collection: 'media', id, req, depth: 0, overrideAccess: false, draft: false }))
   getPublishedMediaURL(doc as MediaDocument)
   return doc as MediaDocument
 }
@@ -69,18 +78,18 @@ export async function buildSiteContent(req: PayloadRequest): Promise<Record<stri
     const editorConfig = await getContentEditorConfig(req.payload.config)
     let page = 1
     while (true) {
-      const result = await req.payload.find({
+      const result = await publishedRead(req, 'posts', () => req.payload.find({
         collection: 'posts', req, overrideAccess: false, draft: false,
         where: { and: [{ _status: { equals: 'published' } }, { visibility: { equals: 'public' } }] },
         depth: 0, limit: 100, page, sort: '-date',
-      })
+      }))
       for (const doc of result.docs) articles[String((doc as any).type)].push(await exportPost(doc as any, req, editorConfig))
       if (!result.hasNextPage) break
       if (++page > 1000) throw new Error('内容数量超出单次构建上限。')
     }
     const pages: Partial<Record<PageName, unknown>> = {}
     for (const slug of PAGE_NAMES) {
-      const doc = await req.payload.findGlobal({ slug, req, overrideAccess: false, draft: false, depth: 0 })
+      const doc = await publishedRead(req, `page:${slug}`, () => req.payload.findGlobal({ slug, req, overrideAccess: false, draft: false, depth: 0 }))
       if ((doc as any)._status !== 'published') throw new Error('页面配置尚未发布，已停止正式内容导出。')
       pages[slug] = exportPageData(slug, doc as any)
     }

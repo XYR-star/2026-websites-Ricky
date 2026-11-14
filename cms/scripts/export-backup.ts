@@ -4,7 +4,7 @@ import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import type { Payload, PayloadRequest } from 'payload'
 import { PAGE_NAMES } from '../src/lib/page-data'
-import { loadLocalEnvironment, verifyEnvironment } from './load-env'
+import { finishCLI, loadLocalEnvironment, verifyEnvironment } from './load-env'
 
 const cmsRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const hiddenCredentialKeys = new Set([
@@ -206,9 +206,9 @@ export async function main(args = process.argv.slice(2)): Promise<void> {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
-  main().catch(() => {
+  main().then(() => finishCLI()).catch(() => {
     // Database/provider errors can contain connection strings. Keep raw errors out of logs.
     console.error('CMS content export failed. No completed backup was published. Check the configured owner, database connection and local directory permissions.')
-    process.exitCode = 1
+    return finishCLI(1)
   })
 }

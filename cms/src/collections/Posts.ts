@@ -28,7 +28,9 @@ export const Posts: CollectionConfig = {
     useAsTitle: 'title',
     defaultColumns: ['title', 'type', 'visibility', '_status', 'date', 'updatedAt'],
     group: '内容管理',
-    description: '草稿仅在后台可见。发布或撤稿后，网站还需要等待部署成功。',
+    description: process.env.SITE_DEPLOY_HOOK?.trim()
+      ? '草稿仅在后台可见。发布或撤稿后，网站还需要等待部署成功。'
+      : '新版试用：草稿和发布版本保存在独立后台。正式站接入完成后才会随发布更新。',
     preview: doc => doc.id && process.env.CMS_URL ? `${process.env.CMS_URL.replace(/\/$/, '')}/preview/posts/${doc.id}` : null,
   },
   access: {

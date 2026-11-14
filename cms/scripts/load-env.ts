@@ -3,6 +3,13 @@ import { configuredSecret, requiredEnv, serverOrigins } from '../src/lib/runtime
 
 export function loadLocalEnvironment(): void {
   for (const path of ['.env.local', '.env']) if (existsSync(path)) process.loadEnvFile(path)
+  process.env.DISABLE_PAYLOAD_HMR = 'true'
+}
+
+/** Payload's own CLI also exits explicitly after destroy; drain output first. */
+export async function finishCLI(code = Number(process.exitCode || 0)): Promise<never> {
+  await Promise.all([process.stdout, process.stderr].map(stream => new Promise<void>(resolve => stream.write('', () => resolve()))))
+  process.exit(code)
 }
 
 export function verifyEnvironment(): void {

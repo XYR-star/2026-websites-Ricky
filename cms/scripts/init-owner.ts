@@ -1,4 +1,4 @@
-import { loadLocalEnvironment, verifyEnvironment } from './load-env'
+import { finishCLI, loadLocalEnvironment, verifyEnvironment } from './load-env'
 
 loadLocalEnvironment()
 verifyEnvironment()
@@ -16,3 +16,6 @@ try {
 } finally {
   await payload.destroy()
 }
+// The upstream adapter retains its bootstrap socket after destroy(). All writes
+// above are awaited; terminate this CLI explicitly, as Payload's own CLI does.
+await finishCLI()

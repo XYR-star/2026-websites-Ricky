@@ -18,8 +18,12 @@ import { MAX_IMAGE_BYTES } from './lib/media-policy'
 
 const dirname = path.dirname(fileURLToPath(import.meta.url))
 const storage = storageConfig()
+const databaseURL = process.env.DATABASE_URL ? new URL(process.env.DATABASE_URL) : undefined
+if (databaseURL?.hostname.endsWith('.neon.tech')) databaseURL.searchParams.set('sslmode', 'verify-full')
 const adapter = postgresAdapter({
-  pool: { connectionString: process.env.DATABASE_URL, max: 3 },
+  // Allow two simultaneous editing transactions plus their independent lock
+  // checks. A bounded wait prevents exhausted connections from hanging forever.
+  pool: { connectionString: databaseURL?.href, max: 5, connectionTimeoutMillis: 15_000 },
   push: false,
   migrationDir: path.resolve(dirname, 'migrations'),
 })
@@ -46,6 +50,14 @@ export default buildConfig({
   cors: configuredOrigins,
   csrf: configuredOrigins,
   telemetry: false,
+  // Payload's development fallback logs complete emails, including recovery
+  // links. Until a real provider is connected, fail closed without logging mail.
+  email: () => ({
+    name: 'mail-disabled',
+    defaultFromAddress: 'no-reply@heyrickishere.com',
+    defaultFromName: 'Ricky CMS',
+    sendEmail: async () => { throw new Error('邮件恢复尚未配置。请使用已登录账号修改密码，或联系站点管理员。') },
+  }),
   admin: {
     user: 'users',
     importMap: { baseDir: dirname },
