@@ -1,6 +1,6 @@
 # Payload v2 开发验证记录
 
-更新：2026-11-15。分支：`feat/payload-v2`。此记录包含代码检查、真实独立 Neon 数据库验证、CMS 试用部署、受控浏览器测试，以及新图发布和独立云端前台验证。正式域名已切到 v2，旧托管已暂停并断开 Git；`v1.0.0` 与 `release/v1` 保留，受保护的 `main` 正等待合并请求归并。并发设备编辑与真实远端构建失败恢复仍未完整验收。
+更新：2026-11-15。正式代码分支：`main`；初期隔离开发使用 `feat/payload-v2`。此记录包含代码检查、真实独立 Neon 数据库验证、CMS 试用部署、受控浏览器测试，以及新图发布和独立云端前台验证。正式域名已切到 v2，旧托管已暂停并断开 Git；`v1.0.0` 与 `release/v1` 保留，v2 代码通过合并请求进入受保护的 `main`。并发设备编辑与真实远端构建失败恢复仍未完整验收。
 
 ## 当前结果
 
@@ -17,14 +17,14 @@
 | v1 导入器离线预检 | 6 篇文章、6 组页面、3 个素材引用、6 次 Markdown 语义往返；未访问数据库或修改源文件 |
 | CMS 类型及编辑器 import map 生成 | 无需数据库，成功 |
 | 独立 Vercel 项目 | `ricky-cms-v2`；目录 `cms`，Next.js、Node 24，生产构建与安装命令已只读核对 |
-| 独立 CMS 试用部署 | 修正版 `8dffb64` 的 `dpl_DXm4h2aL1ptHr5eQHQTbWUdrvxsD` 已 `READY`；检查后提升到固定试用地址 |
+| 独立 CMS 初期试用部署 | 修正版 `8dffb64` 的 `dpl_DXm4h2aL1ptHr5eQHQTbWUdrvxsD` 已 `READY`；检查后提升到固定地址，后续上线部署见下文 |
 | 真实 Neon 数据库 | `ricky-cms-v2-db` 已连接，资源方案 `free_v3`；初始迁移、唯一管理员与 v1 导入完成 |
 | 真实数据库受控验证 | 23 项通过；临时稿件和版本已清理，公开导出恢复原 6 篇，未新增发布记录 |
 | 真实内容导出 | 8 份内容 JSON 与清单共 10 个文件；校验和及目录 700 / 文件 600 权限通过，不含 R2 图片字节 |
 | 私有 R2 新上传 | Production 变量已配置，用户已确认新图上传、预览及刷新缩略图；Preview / Development 未配置，新上传在这两个环境关闭 |
 | 真实 CMS → Astro | 经原生 HTTP 读取真实数据库，6 篇文章完成本机静态构建和搜索索引；64 个公开产物无读取凭据泄漏 |
 | 新图公开发布 | 用户原生 UI 发布测试稿成功；公开图 GET `200`、JPEG 签名、`13,738,798` 字节与素材记录一致，封面及正文引用同一公开 URL，私有原始接口仍为匿名 `403` |
-| 云端 Astro 前台 | `ricky-site-v2` 的 `8dffb64` Git 推送生产部署 `dpl_2EnGjWTzz78RCLXnLoQugT2FvQVG` 为 `READY`，固定地址已验证首页和测试游记 `200` |
+| 云端 Astro 初期试用部署 | `ricky-site-v2` 的 `8dffb64` Git 推送生产部署 `dpl_2EnGjWTzz78RCLXnLoQugT2FvQVG` 为 `READY`，固定地址已验证首页和测试游记 `200`；后续上线部署见下文 |
 | 跨项目受保护读取 | 用户授权唯一前台项目 Production→CMS Production 规则，配置后读回确认；仅复制专用只读凭据到前台敏感环境变量，没有数据库或 R2 写入配置 |
 | 发布钩子 | 按用户明确授权配置并更新 CMS；用户原生 UI 再发布后，自动前台构建 `dpl_EZ9REZzSnb7EDpnLAvL1hG7Xhbp6` 为 READY，页面出现新文字和公链图片；不作用于 v1 |
 | 真实数据库派发协调 | 两条自建 Neon 测试记录、三次模拟 HTTP 返回，13 个布尔断言通过；已清理本次两条测试记录，不能当作云端构建故障测试 |
@@ -33,9 +33,9 @@
 | 本机生产构建 HTTP 验证 | 16 项通过：真实登录、安全 Cookie、旧稿与素材预览、草稿保存及续写、CSRF 拒绝、公开导出隔离和登出；临时稿已清理 |
 | 邮件与密码恢复 | 关闭；未连接邮件服务，不向日志回退输出恢复邮件 |
 
-当前 CMS 试用地址：[ricky-cms-v2.vercel.app/admin](https://ricky-cms-v2.vercel.app/admin)，保留 Vercel Authentication。用户已在线上确认登录、新图上传及刷新后缩略图仍在；部署为 `READY`。具体部署编号以 Vercel 项目最新记录为准，避免后续小修正重新部署使本文地址记录过时。
+当前 CMS 地址：[ricky-cms-v2.vercel.app/admin](https://ricky-cms-v2.vercel.app/admin)，保留 Vercel Authentication。用户已在线上确认登录、新图上传及刷新后缩略图仍在；部署为 `READY`。具体部署编号以 Vercel 项目最新记录为准，避免后续小修正重新部署使本文地址记录过时。
 
-新前台项目 `ricky-site-v2` 的 ID 为 `prj_CU7hlf7Xuvdxt4o4dwDFG2qHoCIY`，固定地址为 [ricky-site-v2.vercel.app](https://ricky-site-v2.vercel.app/)。Git 生产分支已由用户保存为 `feat/payload-v2`。该项目的 Production 已接管个人站 www 与 apex；公开自定义域名对访客开放，平台生成的域名和 CMS 继续保留 Vercel 访问保护。
+新前台项目 `ricky-site-v2` 的 ID 为 `prj_CU7hlf7Xuvdxt4o4dwDFG2qHoCIY`，固定地址为 [ricky-site-v2.vercel.app](https://ricky-site-v2.vercel.app/)。初期 Git 生产分支由用户保存为 `feat/payload-v2`；代码经合并请求归并后，生产跟踪与原有 v2 发布钩子的目标统一改为 `main`。该项目的 Production 已接管个人站 www 与 apex；公开自定义域名对访客开放，平台生成的域名和 CMS 继续保留 Vercel 访问保护。
 
 用户授权的 Trusted Sources 规则只允许该新项目前台的 Production 调用 CMS Production；写入后读回核对，没有添加其他来源，原有规则保持原样。前台构建使用平台 OIDC 短时身份和应用层 `CMS_READ_TOKEN`。后者获用户另行明确授权复制到前台 Production 的 sensitive 环境变量；没有给前台数据库、管理员或 R2 写入凭据。线上首页和测试游记均返回 `200`，游记包含标题及公开封面、正文图片链接，没有私有 R2 或后台文件接口链接。随后给同一验收稿保存带独立校验文字的新草稿，确认已发布主版本仍保留原正文；用户再次从原生 UI 发布，发布记录为 requested 且保留请求编号，前台自动构建 READY，固定域名游记返回 200 并包含该轮新文字和公开图片。此间没有新的代码推送。测试稿后来通过正常撤稿 hooks 撤下并触发真实前台构建；新站文章和公开索引均移除，页面 404，用户素材和稿件历史保留。
 
@@ -90,7 +90,7 @@ R2 验证采用生产配置元数据、用户实际上传刷新和匿名文件�
 - Vercel 内部构建状态查询尚未实现；当前用正式站的确切内容摘要确认本次发布或撤稿已生效。
 - 更多实际手机与浏览器视觉检查；现有受控桌面、`390×844` 手机视口与深浅色验证不能代表所有设备。
 
-正式站已经使用 `CONTENT_SOURCE=payload`。上述未完成项目作为后续完善事项记录；受保护的 `main` 仍需经过合并请求，不绕过分支保护。备份与配置说明见 [v1 基线](v1-baseline.md) 及 [CMS 开发说明](../cms/README.md)。
+正式站已经使用 `CONTENT_SOURCE=payload`。上述未完成项目作为后续完善事项记录；后续代码继续通过合并请求和检查进入受保护的 `main`，不绕过分支保护。备份与配置说明见 [v1 基线](v1-baseline.md) 及 [CMS 开发说明](../cms/README.md)。
 
 ## 2026-11-15 退役 v1 与正式切换
 
