@@ -9,6 +9,10 @@ import { prepareMedia } from '../src/lib/public-media.js'
 import { siteContentEndpoint } from '../src/endpoints/siteContent.js'
 import { isPublishedContentRead, withPublishedContentRead } from '../src/access/content.js'
 import { deploymentDB } from './helpers/deployment-db.js'
+import pendingConfig from '../src/payload.config.js'
+
+const config = await pendingConfig
+const emptyBody = { root: { type: 'root', version: 1, children: [], direction: null, format: '', indent: 0 } }
 
 const admin = { id: 1, collection: 'users', role: 'admin' }
 
@@ -138,7 +142,7 @@ for (const change of [
 ]) test(`${change.title} schedules removal using the old main document even when previousDoc is a newer draft`, async t => {
   const restore = setEnv({ SITE_DEPLOY_HOOK: undefined })
   t.after(restore)
-  let main: Record<string, unknown> = { id: 7, _status: 'published', visibility: 'public', updatedAt: '2026-01-01T00:00:00.000Z' }
+  let main: Record<string, unknown> = { id: 7, type: 'blog', slug: 'old-public-route', _status: 'published', visibility: 'public', updatedAt: '2026-01-01T00:00:00.000Z' }
   const latestDraft = { id: 7, _status: 'draft', visibility: 'public', updatedAt: '2026-01-02T00:00:00.000Z' }
   const events: any[] = []
   const req = request({ user: admin, transactionID: 'content-transaction', payload: {
@@ -147,7 +151,7 @@ for (const change of [
     create: async (args: any) => { events.push(args); return { id: 11, ...args.data } },
   } })
   await preparePostMedia({ operation: 'update', data: change, originalDoc: latestDraft, req, context: {} } as any)
-  main = { id: 7, updatedAt: '2026-01-03T00:00:00.000Z', ...change }
+  main = { id: 7, type: 'blog', slug: 'old-public-route', updatedAt: '2026-01-03T00:00:00.000Z', ...change }
   await notifyPostPublished({ operation: 'update', doc: main, previousDoc: latestDraft, req, context: {} } as any)
   assert.equal(events.length, 1)
   assert.equal(events[0].req, req)
@@ -202,9 +206,10 @@ test('publishing persists its event inside the content transaction without sendi
   t.after(restore)
   let networkCalls = 0
   t.mock.method(globalThis, 'fetch', async () => { networkCalls++; throw new Error('No pre-commit network request is allowed') })
-  const main = { id: 7, _status: 'published', visibility: 'public', updatedAt: '2026-01-03T00:00:00.000Z', title: '发布文章' }
+  const main = { id: 7, type: 'blog', slug: 'new-public-route', date: '2026-01-03', description: '简介', body: emptyBody, _status: 'published', visibility: 'public', updatedAt: '2026-01-03T00:00:00.000Z', title: '发布文章' }
   const events: any[] = []
   const req = request({ user: admin, transactionID: 'uncommitted-content', payload: {
+    config,
     findByID: async () => main,
     find: async () => ({ totalDocs: 0, docs: [] }),
     create: async (args: any) => { events.push(args); return { id: 11, ...args.data } },
@@ -219,8 +224,9 @@ test('publishing persists its event inside the content transaction without sendi
 })
 
 test('a failed durable deployment record aborts publication instead of silently losing the update event', async () => {
-  const main = { id: 7, _status: 'published', visibility: 'public', updatedAt: '2026-01-03T00:00:00.000Z', title: '发布文章' }
+  const main = { id: 7, type: 'blog', slug: 'new-public-route', date: '2026-01-03', description: '简介', body: emptyBody, _status: 'published', visibility: 'public', updatedAt: '2026-01-03T00:00:00.000Z', title: '发布文章' }
   const req = request({ user: admin, payload: {
+    config,
     findByID: async () => main,
     find: async () => ({ totalDocs: 0, docs: [] }),
     create: async () => { throw new Error('Database could not save outbox record') },

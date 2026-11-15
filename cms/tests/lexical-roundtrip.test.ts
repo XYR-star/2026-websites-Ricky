@@ -23,6 +23,16 @@ const config = await buildConfig({
 })
 const editor = await getContentEditorConfig(config)
 
+test('blank native drafts serialize without editor errors and malformed roots are rejected', async t => {
+  const messages: unknown[] = []
+  t.mock.method(console, 'error', (...args: unknown[]) => { messages.push(args) })
+  assert.equal(await serializeContentBody({ root: { type: 'root', version: 1, children: [], direction: null, format: '', indent: 0 } }, editor), '')
+  assert.deepEqual(messages, [])
+  for (const body of [{ root: null }, { root: {} }, { root: { type: 'paragraph', children: [] } }]) {
+    await assert.rejects(serializeContentBody(body, editor), /正文格式无效/)
+  }
+})
+
 function semanticSummary(markdown: string) {
   const summary: { links: unknown[]; images: unknown[]; headings: unknown[]; code: unknown[]; tables: unknown[]; text: string[] } = { links: [], images: [], headings: [], code: [], tables: [], text: [] }
   const plain = (tokens: any[]): string => tokens.map(token => token.tokens ? plain(token.tokens) : token.text ?? '').join('').replace(/\s+/g, ' ').trim()

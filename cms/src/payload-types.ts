@@ -255,7 +255,7 @@ export interface Media {
   focalY?: number | null;
 }
 /**
- * 内容发布与网站上线是两个步骤。“已请求部署”仅表示 Vercel 已接收请求，实际上线仍需确认部署成功。
+ * 部署请求与内容上线分别显示。打开记录可核对正式站内容；检查失败不等于构建失败。
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "deployments".
@@ -267,6 +267,18 @@ export interface Deployment {
   status: 'not-configured' | 'pending' | 'requested' | 'failed';
   message?: string | null;
   jobId?: string | null;
+  contentBinding?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  siteStatus?: ('waiting' | 'verified' | 'different' | 'check-failed' | 'not-tracked') | null;
+  siteCheckedAt?: string | null;
+  siteMessage?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -446,6 +458,10 @@ export interface DeploymentsSelect<T extends boolean = true> {
   status?: T;
   message?: T;
   jobId?: T;
+  contentBinding?: T;
+  siteStatus?: T;
+  siteCheckedAt?: T;
+  siteMessage?: T;
   updatedAt?: T;
   createdAt?: T;
 }

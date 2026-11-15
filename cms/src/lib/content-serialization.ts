@@ -170,6 +170,11 @@ async function sanitizeUploads(value: any, replacements: Map<string, string>, re
 
 export async function serializeContentBody(body: unknown, editorConfig: EditorConfig, resolveMedia?: ResolveMedia): Promise<string> {
   if (!body || typeof body !== 'object' || !('root' in body)) throw new Error('正文格式无效。')
+  const root = body.root
+  if (!root || typeof root !== 'object' || !('type' in root) || root.type !== 'root' ||
+      !('children' in root) || !Array.isArray(root.children)) throw new Error('正文格式无效。')
+  // A native blank draft is valid; the Lexical converter rejects an empty root.
+  if (root.children.length === 0) return ''
   const replacements = new Map<string, string>()
   const data = await sanitizeUploads(body, replacements, resolveMedia)
   const { convertLexicalToMarkdown } = await import('@payloadcms/richtext-lexical')

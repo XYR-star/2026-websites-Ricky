@@ -40,7 +40,7 @@ async function readPublishedMedia(reference: MediaReference, req: PayloadRequest
   return doc as MediaDocument
 }
 
-async function exportPost(doc: Record<string, any>, req: PayloadRequest, editorConfig: Awaited<ReturnType<typeof getContentEditorConfig>>): Promise<Record<string, unknown>> {
+export async function exportPost(doc: Record<string, any>, req: PayloadRequest, editorConfig: Awaited<ReturnType<typeof getContentEditorConfig>>): Promise<Record<string, unknown>> {
   if (doc._status !== 'published' || doc.visibility !== 'public') throw new Error('内容接口拒绝导出非公开版本。')
   if (!['blog', 'travel', 'research'].includes(doc.type)) throw new Error('文章类型无效。')
   const slug = text(doc.slug, '地址')

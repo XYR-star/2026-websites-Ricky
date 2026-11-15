@@ -5,8 +5,12 @@ import { isContentAdmin } from '../access/content'
 import { referencedMediaIDs } from '../lib/media-policy'
 import { prepareMedia } from '../lib/public-media'
 import { isTrustedPublicMedia, serverOrigins } from '../lib/runtime-env'
+import { articleKey, contentFingerprint, type ContentBinding } from '../lib/content-fingerprint'
+import { getContentEditorConfig } from '../lib/content-serialization'
+import { exportPageData, type PageName } from '../lib/page-data'
+import { exportPost } from '../endpoints/siteContent'
 
-type Publication = { _status?: string | null; visibility?: string | null }
+type Publication = { _status?: string | null; visibility?: string | null; type?: string; slug?: string }
 const oldPublications = new WeakMap<object, Map<string, Publication>>()
 function remember(req: PayloadRequest, key: string, value: Publication) {
   let map = oldPublications.get(req)
@@ -25,7 +29,7 @@ export const preparePostMedia: CollectionBeforeChangeHook = async ({ data, origi
   if (!isContentAdmin(req)) throw new Error('Please sign in before publishing.')
   if (operation === 'update' && originalDoc?.id !== undefined) {
     const main = await req.payload.findByID({ collection: 'posts', id: originalDoc.id, draft: false, depth: 0, overrideAccess: false, req })
-    remember(req, `post:${originalDoc.id}`, { _status: main._status, visibility: main.visibility })
+    remember(req, `post:${originalDoc.id}`, { _status: main._status, visibility: main.visibility, type: main.type, slug: main.slug })
   }
   if (data._status !== 'published' || (data.visibility ?? originalDoc?.visibility) === 'private') return data
   const media_id = data.media_id || originalDoc?.media_id || randomUUID()
@@ -89,7 +93,7 @@ export async function dispatchDeploymentRecord(payload: Payload, id: string | nu
   } catch { return { status: 'failed' } }
 }
 
-async function queueBuild(req: PayloadRequest, eventKey: string, label: string): Promise<void> {
+async function queueBuild(req: PayloadRequest, eventKey: string, label: string, contentBinding: ContentBinding): Promise<void> {
   if (!isContentAdmin(req) || req.context.importV1 || req.context.suppressDeploy) return
   const previous = await req.payload.find({ collection: 'deployments', where: { eventKey: { equals: eventKey } }, limit: 1, depth: 0, overrideAccess: false, req })
   if (previous.totalDocs) return
@@ -97,7 +101,7 @@ async function queueBuild(req: PayloadRequest, eventKey: string, label: string):
   // This durable outbox row participates in the same transaction as the content.
   // Failure must abort that transaction rather than silently lose its publish event.
   const record = await req.payload.create({ collection: 'deployments', data: {
-    eventKey, label, status: hook ? 'pending' : 'not-configured',
+    eventKey, label, contentBinding, siteStatus: 'waiting', status: hook ? 'pending' : 'not-configured',
     message: hook ? '等待内容事务提交后发送网站更新。' : '内容保存在 v2 数据库，尚未配置预览部署连接。',
   }, overrideAccess: true, req })
   if (!hook) return
@@ -119,13 +123,21 @@ export const notifyPostPublished: CollectionAfterChangeHook = async ({ doc, prev
   const wasPublic = before?._status === 'published' && before?.visibility === 'public'
   const isPublic = current._status === 'published' && current.visibility === 'public'
   if (!wasPublic && !isPublic) return doc
+  // Bind to this transaction's actual main document, not a later live read.
+  // A rename additionally requires the previously public route to disappear.
+  const binding: ContentBinding = { schemaVersion: 1, articles: {}, pages: {} }
+  const oldRoute = wasPublic ? articleKey(before.type ?? current.type, before.slug ?? current.slug) : undefined
+  const newRoute = articleKey(current.type, current.slug)
+  if (oldRoute && (!isPublic || oldRoute !== newRoute)) binding.articles[oldRoute] = null
+  if (isPublic) binding.articles[newRoute] = contentFingerprint(await exportPost(current, req, await getContentEditorConfig(req.payload.config)))
   const key = createHash('sha256').update(`post:${doc.id}:${current.updatedAt}:${current._status}:${current.visibility}`).digest('hex')
-  await queueBuild(req, key, `${isPublic ? '发布或更新' : '撤下'}：${doc.title}`)
+  await queueBuild(req, key, `${isPublic ? '发布或更新' : '撤下'}：${doc.title}`, binding)
   return doc
 }
 
 export const notifyPostDeleted: CollectionAfterDeleteHook = async ({ doc, req, context }) => {
-  if (!context.importV1 && doc._status === 'published' && doc.visibility === 'public') await queueBuild(req, `delete:${doc.id}:${doc.updatedAt}`, `删除已发布文章：${doc.title}`)
+  if (!context.importV1 && doc._status === 'published' && doc.visibility === 'public') await queueBuild(req, `delete:${doc.id}:${doc.updatedAt}`, `删除已发布文章：${doc.title}`,
+    { schemaVersion: 1, articles: { [articleKey(doc.type, doc.slug)]: null }, pages: {} })
   return doc
 }
 
@@ -155,7 +167,8 @@ export const notifyGlobalPublished: GlobalAfterChangeHook = async ({ doc, previo
   const current = await req.payload.findGlobal({ slug: global.slug, draft: false, depth: 0, overrideAccess: false, req })
   if (current.updatedAt !== doc.updatedAt || current._status !== doc._status) return doc
   if (doc._status !== 'published' && (previousMain ?? previousDoc)?._status !== 'published') return doc
-  await queueBuild(req, `global:${global.slug}:${doc.updatedAt}:${doc._status}`, `更新页面：${global.slug}`)
+  await queueBuild(req, `global:${global.slug}:${doc.updatedAt}:${doc._status}`, `更新页面：${global.slug}`,
+    { schemaVersion: 1, articles: {}, pages: { [global.slug]: contentFingerprint(exportPageData(global.slug as PageName, current)) } })
   return doc
 }
 
