@@ -18,7 +18,7 @@
 
 | 项目 | 状态 |
 | --- | --- |
-| v1 Git 标签和恢复归档 | 已创建、校验；生产为 `d5b026c` |
+| v1 Git 标签和恢复归档 | 已创建、校验；封存基线为 `d5b026c`，不代表当前生产代码 |
 | Vercel `ricky-cms-v2` | 已创建独立项目；根目录 `cms`，Next.js，Node 24 |
 | Neon `ricky-cms-v2-db` | 已创建并连接独立项目，核对为 `free_v3` 免费方案 |
 | 私有 R2 桶和凭据 | Production 已配置并完成用户新图上传验证；Preview / Development 尚未配置，相关环境新上传关闭 |
@@ -36,9 +36,9 @@
 
 Neon 已核对采用 `free_v3` 免费方案；认证由 Payload 提供，本版不依赖额外 Neon Auth 和 Realtime。免费额度以平台当前套餐为准。
 
-这里的 Production / Preview / Development 指对应独立 Vercel 项目的环境。新 CMS 和新前台各自的 Production 不代表个人站正式域名已经切换到 v2。
+这里的 Production / Preview / Development 指对应独立 Vercel 项目的环境。初期只有独立 v2 地址时，Production 并不代表个人站正式域名；2026-11-15 切换后，`ricky-site-v2` 的 Production 已接管正式域名。
 
-试用后台入口为 [`ricky-cms-v2.vercel.app/admin`](https://ricky-cms-v2.vercel.app/admin)，保留 Vercel 访问保护，正式站 /admin 已转到该入口。用户已在实际线上环境确认登录和新图上传；连接器读取登录页为 `200`，匿名请求新图的原生文件接口为 `403`。自动浏览器验证采用本机生产构建转发，保留正式后台来源并使用真实 v2 数据库，不能称为公网部署的全自动端到端验收。登录资料不进入仓库。
+当前后台入口为 [`ricky-cms-v2.vercel.app/admin`](https://ricky-cms-v2.vercel.app/admin)，保留 Vercel 访问保护，正式站 /admin 已转到该入口。用户已在实际线上环境确认登录和新图上传；连接器读取登录页为 `200`，匿名请求新图的原生文件接口为 `403`。自动浏览器验证采用本机生产构建转发，保留正式后台来源并使用真实 v2 数据库，不能称为公网部署的全自动端到端验收。登录资料不进入仓库。
 
 独立 v2 前台为 [`ricky-site-v2.vercel.app`](https://ricky-site-v2.vercel.app/)，仍有 Vercel 访问保护。`8dffb64` 经 Git 推送触发的生产部署 `dpl_2EnGjWTzz78RCLXnLoQugT2FvQVG` 已 `READY`；线上首页和测试游记均为 `200`，游记含新图的公开封面与正文链接，没有私有 R2 或后台文件接口链接。网站源码仍由 GitHub 管理，文章正文来自 CMS 数据库。随后用户再次在原生 UI 发布测试稿，发布记录保存部署请求编号，自动触发 `dpl_EZ9REZzSnb7EDpnLAvL1hG7Xhbp6` 并 `READY`；固定前台地址已验证出现该次新文字及同一公开图片。随后增加正式内容摘要核验，并完成测试稿撤稿：新站不再导出该稿，原链接 404；这条撤稿记录经真实正式站核验为 verified。原图片与历史版本保留。
 
@@ -60,7 +60,7 @@ flowchart TD
   Dispatch --> Build[Vercel 上的 Astro 构建]
   DB -->|CMS 接口仅导出公开正式版本| Build
   GitHub[GitHub 网站代码] --> Build
-  Build --> Site[独立 v2 试用前台]
+  Build --> Site[v2 正式网站]
   PublicMedia --> Site
 ```
 
@@ -73,7 +73,7 @@ flowchart TD
 5. 通过 `owner:init` 初始化唯一管理员。`CMS_ADMIN_PASSWORD` 只用于本机初始化，不写入 Vercel 环境。
 6. 先运行 v1 导入离线预检，再执行 `--apply`。已有文章、页面保持原样，不覆盖后续编辑。
 7. CMS Production 的私有 R2 已配置；新图上传、刷新预览、发布及公开副本已验证。Preview / Development 的私有上传配置仍不齐全，如需启用须另行配置对应环境的桶、限定权限和 CORS；缺少配置时该环境上传关闭，没有本机临时存储回退。
-8. 独立前台 `ricky-site-v2` 已连接同一仓库，生产分支由用户保存为 `feat/payload-v2`，并从 CMS 读取公开内容完成云端构建。只作用于该前台的发布钩子已通过实际发布联动；v1 停止对外服务，备份与恢复部署继续保留。
+8. 独立前台 `ricky-site-v2` 已连接同一仓库，初期生产分支由用户保存为 `feat/payload-v2`。正式代码经合并请求归并后，生产跟踪与后台部署钩子的目标统一为 `main`，从 CMS 读取公开内容完成云端构建。钩子仅作用于该 v2 前台；v1 停止对外服务，备份与恢复部署继续保留。
 
 需要 Node `^24.22.1`。从本目录运行：
 
@@ -115,7 +115,7 @@ npm run dev
 | `CMS_ADMIN_EMAIL` | 唯一管理员身份 |
 | `CMS_ADMIN_PASSWORD` | 本机初始化专用，至少 16 字符；不部署 |
 | `R2_*` | 私有上传桶、现有公开桶和限定桶权限凭据；私有上传凭据目前仅 Vercel Production 齐全，见 `.env.example` |
-| `SITE_DEPLOY_HOOK` | 仅指向独立 `ricky-site-v2 / feat/payload-v2` 的部署钩子，CMS Production 中为 sensitive；钩子 URL 不进入仓库或本机文件 |
+| `SITE_DEPLOY_HOOK` | 仅指向 `ricky-site-v2 / main` 的部署钩子，CMS Production 中为 sensitive；钩子 URL 不进入仓库或本机文件 |
 
 独立 Astro 项目的 Production 设置 `CONTENT_SOURCE=payload`、`CMS_URL`、`CMS_READ_TOKEN`。专用只读凭据已获用户明确授权复制到前台的敏感环境变量；不复制数据库地址、Payload 会话密钥、管理员密码或 R2 写入密钥。云端构建附加短时 `VERCEL_OIDC_TOKEN`，通过 CMS 上仅允许该项目前台 Production→CMS Production 的 Trusted Sources 规则，同时保留应用层 Bearer 校验及双方的 Vercel 访问保护。读取器只向配置的 HTTPS `*.vercel.app` 目标发送该平台令牌，不发送给本机、自定义 CMS 或相似域名，不跟随重定向。读取出错、草稿混入、页面缺失、私有签名图片地址都会中止构建，不回退到仓库文章。
 
@@ -167,12 +167,12 @@ npm run verify:live -- --run
 - 公网部署的全自动端到端验证。线上用户登录、新图上传刷新、匿名新图读取拒绝已分别确认；本机生产构建转发中的浏览器验证有明确范围。
 - 两个设备并发编辑冲突和浏览器中的版本恢复；桌面自动保存刷新与独立 `390×844` 手机浅色会话续稿已通过。
 - 原始对象与公开副本的完整哈希对比，以及素材复制或远端构建失败后的实际恢复；新图 UI 发布、公开副本、封面和正文展示已分别通过。
-- 撤稿与页面更新后的实际部署，以及真实远端构建失败后的恢复。文章发布的钩子联动、受保护的跨项目读取和模拟请求失败恢复已分别通过。
+- 页面配置更新后的更多实际部署，以及真实远端构建失败后的恢复。文章发布与撤稿均已通过真实前台部署和页面核验；受保护的跨项目读取和模拟请求失败恢复已分别通过。
 - 内容核验已匹配本次发布或撤稿的确切摘要；它不查询 Vercel 内部构建状态。实际远端构建故障仍需结合 Vercel 日志诊断。
 - 更多实际手机与浏览器的视觉检查。受控桌面深浅色与 `390×844` 手机浅色会话、原生富文本、完整私稿预览及旧封面实际加载已验证。
 
 ## 2026-11-15 正式切换
 
-正式前台项目 `ricky-site-v2` 接管 www 和 apex，保留 apex→www 的 308 跳转，素材域名不变。首页、旧文章、管理员跳转及公开状态摘要均已匿名验证。旧 `2026-websites-ricky` 托管返回暂停状态，Git 连接已断开；不删除恢复部署、标签或 R2 对象。代码当前仍位于部署分支 `feat/payload-v2`，受保护的 `main` 需经合并请求归并。
+正式前台项目 `ricky-site-v2` 接管 www 和 apex，保留 apex→www 的 308 跳转，素材域名不变。首页、旧文章、管理员跳转及公开状态摘要均已匿名验证。旧 `2026-websites-ricky` 托管返回暂停状态，Git 连接已断开；不删除恢复部署、标签或 R2 对象。代码通过合并请求进入受保护的 `main`；正式前台的生产跟踪与后台部署钩子均使用 `main`，不绕过分支保护。
 
 版本恢复在真实数据库完成 20 项断言，自建私密测试稿与版本已精确清理。文章版本页可选“恢复为草稿”保留当前发布版；直接恢复旧的已发布版本会更新发布内容，全局页面没有同样的草稿恢复下拉。

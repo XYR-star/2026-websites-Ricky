@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths: ['cms/**', 'src/lib/payload-*', 'scripts/payload-content.test.mjs', '.github/workflows/payload-v2.yml']
   push:
-    branches: [feat/payload-v2]
+    branches: [main, feat/payload-v2]
     paths: ['cms/**', 'src/lib/payload-*', 'scripts/payload-content.test.mjs', '.github/workflows/payload-v2.yml']
 
 permissions:

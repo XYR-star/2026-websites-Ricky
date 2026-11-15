@@ -13,7 +13,7 @@
 | 正式网站 | `https://www.heyrickishere.com/` |
 | 素材域名 | `https://assets.heyrickishere.com` |
 
-v2 在 `feat/payload-v2` 和独立后台项目中开发。固定 v1 标签没有修改 `main`，也没有切换正式网站域名。
+v2 开发初期使用 `feat/payload-v2` 和独立后台项目；当时固定 v1 标签的操作没有修改 `main`，也没有切换正式网站域名。后续 v2 正式上线和主分支归并不改写这里的冻结基线。
 
 ## 备份范围
 
