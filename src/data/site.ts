@@ -1,5 +1,5 @@
 import siteData from "./site.json";
-import { validatePageData } from "../lib/page-data.mjs";
+import { getPageData } from "../lib/payload-content.mjs";
 
 type SocialLink = {
   label: string;
@@ -7,7 +7,7 @@ type SocialLink = {
 };
 
 const siteUrl = import.meta.env.SITE_URL ?? "https://www.heyrickishere.com";
-const validatedSite = validatePageData("site", siteData) as typeof siteData;
+const validatedSite = await getPageData("site", siteData) as typeof siteData;
 
 export const siteMeta = {
   ...validatedSite,

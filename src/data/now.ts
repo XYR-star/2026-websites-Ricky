@@ -1,4 +1,4 @@
 import nowData from "./now.json";
-import { validatePageData } from "../lib/page-data.mjs";
+import { getPageData } from "../lib/payload-content.mjs";
 
-export const nowPage = validatePageData("now", nowData) as typeof nowData;
+export const nowPage = await getPageData("now", nowData) as typeof nowData;

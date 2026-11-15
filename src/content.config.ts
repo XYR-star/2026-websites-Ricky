@@ -2,11 +2,18 @@ import { defineCollection } from "astro:content";
 import { glob } from "astro/loaders";
 import { z } from "astro/zod";
 import { cmsTrialMediaUrl } from "./lib/cms-trial-media.mjs";
+import { getContentSource } from "./lib/payload-content.mjs";
+import { payloadLoader } from "./lib/payload-loader";
 
 const markdownFiles = ["**/*.md", "!**/_*/**/*.md", "!**/_*.md"];
+const contentSource = getContentSource();
+const articleLoader = (collection: "blog" | "research" | "travel") =>
+  contentSource === "payload"
+    ? payloadLoader(collection)
+    : glob({ base: `./src/content/${collection}`, pattern: markdownFiles });
 
 const blog = defineCollection({
-  loader: glob({ base: "./src/content/blog", pattern: markdownFiles }),
+  loader: articleLoader("blog"),
   schema: z.object({
     title: z.string(),
     description: z.string(),
@@ -19,7 +26,7 @@ const blog = defineCollection({
 });
 
 const research = defineCollection({
-  loader: glob({ base: "./src/content/research", pattern: markdownFiles }),
+  loader: articleLoader("research"),
   schema: z.object({
     title: z.string(),
     date: z.coerce.date(),
@@ -42,7 +49,7 @@ const research = defineCollection({
 });
 
 const travel = defineCollection({
-  loader: glob({ base: "./src/content/travel", pattern: markdownFiles }),
+  loader: articleLoader("travel"),
   schema: z.object({
     title: z.string(),
     description: z.string(),

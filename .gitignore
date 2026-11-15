@@ -4,6 +4,15 @@ dist
 .DS_Store
 *.log
 .env
+.env.*
+!.env.example
+!**/.env.example
+.vercel
+.next
+cms/media
+cms/.payload-data
+cms/private-exports
+*.tsbuildinfo
 .codex
 .vscode
 .admin-data
